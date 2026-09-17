@@ -267,7 +267,7 @@ const RAW_DATA = {
       ]
     }
   ],
-  "generatedAt": "2026-09-17T05:09:54+00:00",
+  "generatedAt": "2026-09-17T13:58:09+00:00",
   "generatedFrom": "KOTAO_2026.xlsx"
 };
 if (typeof module !== 'undefined') module.exports = RAW_DATA;
