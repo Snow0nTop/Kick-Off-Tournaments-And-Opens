@@ -23,9 +23,9 @@ const RAW_DATA = {
       "b": 2,
       "bo": 3,
       "rounds": [
-        "1-3",
-        "4-2",
-        "2-3"
+        null,
+        null,
+        null
       ]
     },
     {
@@ -267,7 +267,7 @@ const RAW_DATA = {
       ]
     }
   ],
-  "generatedAt": "2026-09-17T14:00:20+00:00",
+  "generatedAt": "2026-09-17T14:05:49+00:00",
   "generatedFrom": "KOTAO_2026.xlsx"
 };
 if (typeof module !== 'undefined') module.exports = RAW_DATA;
