@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>KOTAO Tournament</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700;800&display=swap" rel="stylesheet">
+<link rel="icon" href="favicon.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap">
+    <div class="brand"><img class="tlogo brand-logo" src="logos/kotao.webp" alt=""> KOTAO</div>
+    <nav class="navlinks">
+      <a href="index.html" data-page="overview">Overview</a>
+      <a href="group-stage.html" data-page="group">Group Stage</a>
+      <a href="playoffs.html" data-page="playoffs">Playoffs</a>
+      <a href="rules.html" data-page="rules">Format &amp; Rules</a>
+    </nav>
+  </div>
+</header>
+
+<div class="hero">
+  <div class="wrap hero-id">
+    <img class="tlogo hero-logo" src="logos/kotao-lg.webp" alt="KOTAO">
+    <div class="hero-text">
+      <h1>KOTAO Tournament</h1>
+      <div class="tagline">Six teams. Double elimination. One champion.</div>
+      <div class="badges" id="hero-badges"></div>
+    </div>
+  </div>
+</div>
+
+<main class="wrap">
+
+  <section>
+    <div class="stat-grid" id="stat-grid"></div>
+  </section>
+
+  <section>
+    <div class="section-head">
+      <h2>Group Stage Standings</h2>
+      <a href="group-stage.html">Full standings &amp; matchdays →</a>
+    </div>
+    <div class="panel" id="standings-preview"></div>
+  </section>
+
+  <section>
+    <div class="section-head">
+      <h2>Latest Results</h2>
+      <span class="note">Most recently finished matches</span>
+    </div>
+    <div id="recent-results"></div>
+  </section>
+
+  <section id="next-section" style="display:none">
+    <div class="section-head">
+      <h2>Up Next</h2>
+      <span class="note">Next round to be played</span>
+    </div>
+    <div id="next-match"></div>
+  </section>
+
+  <section>
+    <div class="section-head">
+      <h2>Playoffs Bracket</h2>
+      <a href="playoffs.html">Full bracket →</a>
+    </div>
+    <div class="panel" id="bracket-preview"></div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap">KOTAO Tournament — generated from the official tracker. Format details on the <a href="rules.html">Rules page</a>.
+    <div id="updated-stamp" class="stamp"></div></div>
+</footer>
+
+<script src="js/logic.js"></script>
+<script src="data/data.js"></script>
+<script src="js/render.js"></script>
+<script>
+initNav('overview');
+const t = buildTournament(RAW_DATA);
+
+// ---- badges ---------------------------------------------------------
+const badges = document.getElementById('hero-badges');
+const phase = t.champion ? 'Completed'
+  : !t.allDecided ? 'Group Stage'
+  : t.seedingSettled ? 'Playoffs' : 'Tiebreak Pending';
+const daysDone = [1,2,3,4,5].filter(d => t.groupRows.filter(r => r.matchday===d).every(r => r.stats.decided)).length;
+badges.innerHTML = `
+  <span class="badge ${t.champion ? 'gold' : 'live'}">${t.champion ? '🏆 ' + phase : '● ' + phase}</span>
+  <span class="badge">6 Teams</span>
+  <span class="badge">Group Stage: ${daysDone}/5 matchdays</span>
+  <span class="badge">Double Elimination Playoffs</span>
+`;
+
+// ---- stat cards -------------------------------------------------------
+const stats = document.getElementById('stat-grid');
+const leader = t.standings[0];
+stats.innerHTML = `
+  <div class="stat-card"><div class="label">Group Leader</div>
+    <div class="value accent team-value">${t.anyGroupPlayed
+      ? `<span class="team-id">${teamHtml(leader, { cls: 'md' })}</span>`
+      : '<span class="tbd-value">TBD</span>'}</div></div>
+  <div class="stat-card"><div class="label">Matchdays Played</div><div class="value">${daysDone} / 5</div></div>
+  <div class="stat-card"><div class="label">Playoffs</div><div class="value">${t.seedingSettled ? 'Underway' : t.allDecided ? 'On hold' : 'Locked'}</div></div>
+  <div class="stat-card"><div class="label">Champion</div>
+    <div class="value gold team-value">${t.champion
+      ? `<span class="team-id">${teamHtml(t.champion, { cls: 'md' })}</span>`
+      : '<span class="tbd-value">TBD</span>'}</div></div>
+`;
+
+// ---- standings preview --------------------------------------------------
+renderStandingsTable(document.getElementById('standings-preview'), t, { compact: true });
+const tieNote = tieNoticeEl(t);
+if (tieNote) {
+  const box = document.getElementById('standings-preview');
+  box.parentNode.insertBefore(tieNote, box);
+}
+
+// ---- recent results -------------------------------------------------
+const allMatches = t.groupRows.map(r => ({ ...r, kind: 'Group · Matchday ' + r.matchday }))
+  .concat(t.playoffs.filter(p => p.stats.played).map(p => ({ teamA: p.teamA, teamB: p.teamB, stats: p.stats, rounds: p.rounds, kind: p.name })));
+const finished = allMatches.filter(m => m.stats.decided).slice(-5).reverse();
+const recent = document.getElementById('recent-results');
+if (finished.length) {
+  const panel = el('div', 'panel');
+  finished.forEach(m => {
+    panel.appendChild(el('div', 'match-kind', m.kind));
+    panel.appendChild(matchRow(m.teamA, m.teamB, m.stats, m.rounds));
+  });
+  recent.appendChild(panel);
+} else {
+  recent.innerHTML = '<div class="panel" style="padding:20px;color:var(--text-mute)">No matches finished yet.</div>';
+}
+
+// ---- next match -------------------------------------------------------
+const pending = t.seedingSettled
+  ? t.playoffs.find(p => !p.stats.decided && p.teamA && p.teamB)
+  : t.groupRows.find(r => !r.stats.decided);
+if (pending) {
+  document.getElementById('next-section').style.display = '';
+  const box = document.getElementById('next-match');
+  const panel = el('div', 'panel');
+  panel.appendChild(matchRow(pending.teamA, pending.teamB, pending.stats, pending.rounds));
+  box.appendChild(panel);
+}
+
+// ---- bracket preview --------------------------------------------------
+renderBracket(document.getElementById('bracket-preview'), t);
+
+renderUpdatedStamp(RAW_DATA.generatedAt);
+</script>
+</body>
+</html>

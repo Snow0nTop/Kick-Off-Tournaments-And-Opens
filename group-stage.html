@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Group Stage — KOTAO Tournament</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700;800&display=swap" rel="stylesheet">
+<link rel="icon" href="favicon.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap">
+    <div class="brand"><img class="tlogo brand-logo" src="logos/kotao.webp" alt=""> KOTAO</div>
+    <nav class="navlinks">
+      <a href="index.html" data-page="overview">Overview</a>
+      <a href="group-stage.html" data-page="group">Group Stage</a>
+      <a href="playoffs.html" data-page="playoffs">Playoffs</a>
+      <a href="rules.html" data-page="rules">Format &amp; Rules</a>
+    </nav>
+  </div>
+</header>
+
+<div class="hero">
+  <div class="wrap">
+    <h1>Group Stage</h1>
+    <div class="tagline">Every team plays every other team once, across 5 matchdays. BO3 per match.</div>
+  </div>
+</div>
+
+<main class="wrap">
+
+  <section>
+    <div class="section-head"><h2>Standings</h2></div>
+    <div class="panel" id="standings"></div>
+  </section>
+
+  <section>
+    <div class="section-head"><h2>Head to Head</h2><span class="note">Rounds won, row team first</span></div>
+    <div class="panel" id="h2h"></div>
+  </section>
+
+  <section>
+    <div class="section-head"><h2>Match Report</h2></div>
+    <div id="matchdays"></div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap">KOTAO Tournament — generated from the official tracker. Format details on the <a href="rules.html">Rules page</a>.
+    <div id="updated-stamp" class="stamp"></div></div>
+</footer>
+
+<script src="js/logic.js"></script>
+<script src="data/data.js"></script>
+<script src="js/render.js"></script>
+<script>
+initNav('group');
+const t = buildTournament(RAW_DATA);
+renderStandingsTable(document.getElementById('standings'), t);
+const tieNote = tieNoticeEl(t);
+if (tieNote) {
+  const box = document.getElementById('standings');
+  box.parentNode.insertBefore(tieNote, box);
+}
+renderHeadToHead(document.getElementById('h2h'), t);
+renderMatchdays(document.getElementById('matchdays'), t);
+
+renderUpdatedStamp(RAW_DATA.generatedAt);
+</script>
+</body>
+</html>

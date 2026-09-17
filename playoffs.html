@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Playoffs — KOTAO Tournament</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700;800&display=swap" rel="stylesheet">
+<link rel="icon" href="favicon.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap">
+    <div class="brand"><img class="tlogo brand-logo" src="logos/kotao.webp" alt=""> KOTAO</div>
+    <nav class="navlinks">
+      <a href="index.html" data-page="overview">Overview</a>
+      <a href="group-stage.html" data-page="group">Group Stage</a>
+      <a href="playoffs.html" data-page="playoffs">Playoffs</a>
+      <a href="rules.html" data-page="rules">Format &amp; Rules</a>
+    </nav>
+  </div>
+</header>
+
+<div class="hero">
+  <div class="wrap">
+    <h1>Playoffs</h1>
+    <div class="tagline">Double elimination. 1st–4th enter the Upper Bracket, 5th–6th the Lower Bracket.</div>
+  </div>
+</div>
+
+<main class="wrap">
+
+  <section id="locked-note" style="display:none">
+    <div class="panel" style="padding:20px;color:var(--text-mute)">
+      The bracket fills in once every group stage match is finished. Until then every slot reads TBD &mdash; hover one to see where its team will come from.
+    </div>
+  </section>
+
+  <section>
+    <div class="section-head"><h2>Bracket</h2></div>
+    <div class="panel" id="bracket"></div>
+  </section>
+
+  <section>
+    <div class="section-head"><h2>Match Report</h2></div>
+    <div id="playoff-list"></div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap">KOTAO Tournament — generated from the official tracker. Format details on the <a href="rules.html">Rules page</a>.
+    <div id="updated-stamp" class="stamp"></div></div>
+</footer>
+
+<script src="js/logic.js"></script>
+<script src="data/data.js"></script>
+<script src="js/render.js"></script>
+<script>
+initNav('playoffs');
+const t = buildTournament(RAW_DATA);
+if (!t.allDecided) {
+  document.getElementById('locked-note').style.display = '';
+} else if (!t.seedingSettled) {
+  const tieNote = tieNoticeEl(t);
+  const host = document.getElementById('locked-note');
+  host.innerHTML = '';
+  host.appendChild(tieNote);
+  host.style.display = '';
+}
+renderBracket(document.getElementById('bracket'), t);
+renderPlayoffList(document.getElementById('playoff-list'), t);
+
+renderUpdatedStamp(RAW_DATA.generatedAt);
+</script>
+</body>
+</html>
