@@ -4,6 +4,10 @@
 // everything else (standings, seeding, the bracket) is derived here, so the
 // site can never drift from the workbook's own logic.
 
+// Round-robin pairing of calendar slots 1-6 (circle method), by matchday.
+// Which team fills each slot is the workbook's draw: data.js carries every
+// match already resolved to team numbers (m.a, m.b), so this table is only the
+// fallback for data exported before the draw existed.
 const SCHEDULE = [
   [[1, 2], [3, 6], [4, 5]],
   [[1, 3], [2, 4], [5, 6]],
@@ -22,6 +26,12 @@ const PLAYOFF_PHASES = [
   { code: 'LB-F',   name: 'Lower Bracket Final' },
   { code: 'GF',     name: 'Grand Final' },
 ];
+
+// Alphabetical order the way Excel sorts: case-insensitive, so "BM FC" comes
+// after "Blizzards FC" here exactly as it does in the workbook.
+function byName(a, b) {
+  return String(a).localeCompare(String(b), 'en', { sensitivity: 'base' });
+}
 
 function parseRound(s) {
   if (typeof s !== 'string' || s.indexOf('-') === -1) return null;
@@ -58,17 +68,17 @@ function seriesStats(rounds, bo) {
 }
 
 function computeGroupStage(teams, groupMatches) {
-  // groupMatches[i] = {a, b, bo, rounds} with a/b as 1-based team numbers,
-  // in SCHEDULE order (matchday 1's three matches, then matchday 2's, ...).
+  // groupMatches[i] = {a, b, bo, rounds} with a/b as 1-based positions in
+  // `teams`, in calendar order (matchday 1's three matches, then matchday 2's...).
   const stats = {};
   teams.forEach(t => stats[t] = { mp: 0, mw: 0, ml: 0, rw: 0, rl: 0, gf: 0, ga: 0 });
 
   const rows = [];
   let idx = 0;
   SCHEDULE.forEach((day, dayIdx) => {
-    day.forEach(([a, b]) => {
+    day.forEach(([slotA, slotB]) => {
       const m = groupMatches[idx++];
-      const teamA = teams[a - 1], teamB = teams[b - 1];
+      const teamA = teams[(m.a || slotA) - 1], teamB = teams[(m.b || slotB) - 1];
       const s = seriesStats(m.rounds, m.bo);
       rows.push({ matchday: dayIdx + 1, teamA, teamB, bo: m.bo, rounds: m.rounds, stats: s });
       if (s.played > 0) {
@@ -146,7 +156,7 @@ function tiedGroups(teams, rank) {
   teams.forEach(t => (byRank[rank[t]] = byRank[rank[t]] || []).push(t));
   return Object.keys(byRank).map(Number).sort((a, b) => a - b)
     .filter(r => byRank[r].length > 1)
-    .map(r => ({ rank: r, teams: byRank[r].slice().sort() }));
+    .map(r => ({ rank: r, teams: byRank[r].slice().sort(byName) }));
 }
 
 // Resolves the double-elimination bracket from the ranked standings and the
@@ -189,7 +199,7 @@ function buildTournament(raw) {
   const rank = rankTeams(teams, groupStats, groupRows);
   // Display order only: by rank, then alphabetically inside a shared rank.
   // The alphabet never decides a position - tied teams keep the same rank.
-  const standings = teams.slice().sort((x, y) => rank[x] - rank[y] || (x < y ? -1 : x > y ? 1 : 0));
+  const standings = teams.slice().sort((x, y) => rank[x] - rank[y] || byName(x, y));
   const allDecided = groupRows.every(r => r.stats.decided);
   // Before a single round is played every team ties on every tiebreak, so
   // every team shares rank 1. That is not a standing, and callers must not
@@ -211,6 +221,6 @@ function buildTournament(raw) {
 // Bridge for the Node-based parity test harness; harmless in the browser
 // (module is undefined there, so this line never runs).
 if (typeof module !== 'undefined') {
-  module.exports = { parseRound, seriesStats, computeGroupStage, rankTeams, tiedGroups,
+  module.exports = { byName, parseRound, seriesStats, computeGroupStage, rankTeams, tiedGroups,
                      computePlayoffs, buildTournament, SCHEDULE, PLAYOFF_PHASES };
 }

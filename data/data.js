@@ -3,10 +3,10 @@
 const RAW_DATA = {
   "teams": [
     "Blizzards FC",
+    "BM FC",
     "Cali FC",
     "Cerruanos FC",
     "Crown FC",
-    "Rakuzan FC",
     "Sand Monkey FC"
   ],
   "tiebreakWins": [
@@ -19,6 +19,46 @@ const RAW_DATA = {
   ],
   "groupMatches": [
     {
+      "a": 3,
+      "b": 1,
+      "bo": 3,
+      "rounds": [
+        null,
+        null,
+        null
+      ]
+    },
+    {
+      "a": 6,
+      "b": 4,
+      "bo": 3,
+      "rounds": [
+        null,
+        null,
+        null
+      ]
+    },
+    {
+      "a": 2,
+      "b": 5,
+      "bo": 3,
+      "rounds": [
+        null,
+        null,
+        null
+      ]
+    },
+    {
+      "a": 3,
+      "b": 6,
+      "bo": 3,
+      "rounds": [
+        null,
+        null,
+        null
+      ]
+    },
+    {
       "a": 1,
       "b": 2,
       "bo": 3,
@@ -29,48 +69,28 @@ const RAW_DATA = {
       ]
     },
     {
-      "a": 3,
-      "b": 6,
-      "bo": 3,
-      "rounds": [
-        null,
-        null,
-        null
-      ]
-    },
-    {
-      "a": 4,
-      "b": 5,
-      "bo": 3,
-      "rounds": [
-        null,
-        null,
-        null
-      ]
-    },
-    {
-      "a": 1,
-      "b": 3,
-      "bo": 3,
-      "rounds": [
-        null,
-        null,
-        null
-      ]
-    },
-    {
-      "a": 2,
-      "b": 4,
-      "bo": 3,
-      "rounds": [
-        null,
-        null,
-        null
-      ]
-    },
-    {
       "a": 5,
-      "b": 6,
+      "b": 4,
+      "bo": 3,
+      "rounds": [
+        null,
+        null,
+        null
+      ]
+    },
+    {
+      "a": 3,
+      "b": 2,
+      "bo": 3,
+      "rounds": [
+        null,
+        null,
+        null
+      ]
+    },
+    {
+      "a": 6,
+      "b": 5,
       "bo": 3,
       "rounds": [
         null,
@@ -100,37 +120,7 @@ const RAW_DATA = {
     },
     {
       "a": 2,
-      "b": 6,
-      "bo": 3,
-      "rounds": [
-        null,
-        null,
-        null
-      ]
-    },
-    {
-      "a": 1,
-      "b": 5,
-      "bo": 3,
-      "rounds": [
-        null,
-        null,
-        null
-      ]
-    },
-    {
-      "a": 4,
-      "b": 6,
-      "bo": 3,
-      "rounds": [
-        null,
-        null,
-        null
-      ]
-    },
-    {
-      "a": 2,
-      "b": 3,
+      "b": 4,
       "bo": 3,
       "rounds": [
         null,
@@ -141,16 +131,6 @@ const RAW_DATA = {
     {
       "a": 1,
       "b": 6,
-      "bo": 3,
-      "rounds": [
-        null,
-        null,
-        null
-      ]
-    },
-    {
-      "a": 2,
-      "b": 5,
       "bo": 3,
       "rounds": [
         null,
@@ -161,6 +141,26 @@ const RAW_DATA = {
     {
       "a": 3,
       "b": 4,
+      "bo": 3,
+      "rounds": [
+        null,
+        null,
+        null
+      ]
+    },
+    {
+      "a": 1,
+      "b": 5,
+      "bo": 3,
+      "rounds": [
+        null,
+        null,
+        null
+      ]
+    },
+    {
+      "a": 6,
+      "b": 2,
       "bo": 3,
       "rounds": [
         null,
@@ -267,7 +267,7 @@ const RAW_DATA = {
       ]
     }
   ],
-  "generatedAt": "2026-09-17T14:05:49+00:00",
+  "generatedAt": "2026-09-19T18:16:49+00:00",
   "generatedFrom": "KOTAO_2026.xlsx"
 };
 if (typeof module !== 'undefined') module.exports = RAW_DATA;

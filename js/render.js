@@ -28,7 +28,7 @@ function esc(s) {
 // so renaming a team in the workbook never breaks a layout - it just loses the
 // crest until someone drops in a file with the matching name.
 const LOGO_SLUGS = new Set([
-  'blizzardsfc', 'califc', 'cerruanosfc', 'crownfc', 'kotao', 'rakuzanfc', 'sandmonkeyfc',
+  'blizzardsfc', 'bmfc', 'califc', 'cerruanosfc', 'crownfc', 'kotao', 'sandmonkeyfc',
 ]);
 
 function teamSlug(name) {
@@ -156,7 +156,7 @@ function tieNoticeEl(t) {
 
 // -------------------------------------------------------------- head-to-head
 function renderHeadToHead(container, t) {
-  const alpha = t.teams.slice().sort();
+  const alpha = t.teams.slice().sort(byName);
   const seriesOf = {};
   t.groupRows.forEach(r => {
     seriesOf[r.teamA + '|' + r.teamB] = { s: r.stats, flip: false };
