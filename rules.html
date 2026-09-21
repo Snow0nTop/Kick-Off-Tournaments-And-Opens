@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Format &amp; Rules — KOTAO Tournament</title>
+<title>Format &amp; Rules — KOTAO</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700;800&display=swap" rel="stylesheet">
 <link rel="icon" href="favicon.png">
@@ -12,17 +12,7 @@
 </head>
 <body>
 
-<header class="topbar">
-  <div class="wrap">
-    <div class="brand"><img class="tlogo brand-logo" src="logos/kotao.webp" alt=""> KOTAO</div>
-    <nav class="navlinks">
-      <a href="index.html" data-page="overview">Overview</a>
-      <a href="group-stage.html" data-page="group">Group Stage</a>
-      <a href="playoffs.html" data-page="playoffs">Playoffs</a>
-      <a href="rules.html" data-page="rules">Format &amp; Rules</a>
-    </nav>
-  </div>
-</header>
+<header class="topbar"><div class="wrap" id="nav"></div></header>
 
 <div class="hero">
   <div class="wrap">
@@ -33,62 +23,14 @@
 
 <main class="wrap">
 
-  <section>
-    <div class="glance">
-      <div class="glance-item"><div class="k">6</div><div class="v">Teams</div></div>
-      <div class="glance-item"><div class="k">5</div><div class="v">Matchdays</div></div>
-      <div class="glance-item"><div class="k">15</div><div class="v">Group matches</div></div>
-      <div class="glance-item"><div class="k">8</div><div class="v">Playoff matches</div></div>
-    </div>
-  </section>
+  <section><div class="glance" id="glance"></div></section>
 
   <section>
     <h2 class="rule-group">The Group Stage</h2>
     <div class="panel">
-
-      <div class="rule-card">
-        <span class="tag">SCHEDULE</span>
-        <h3>Everyone plays everyone</h3>
-        <p>The group stage runs over <strong>5 matchdays</strong>, and all six teams play on every
-           one of them. You will face each of the other five teams exactly once, which makes
-           <strong>15 matches</strong> in total across the group.</p>
-        <p>Every group match is a <strong>Best of 3</strong>: the first team to win two rounds
-           takes the match, so a match ends 2&ndash;0 or 2&ndash;1.</p>
-        <p class="aside">In KOTAO a <strong>match</strong> is a series between two teams, and a
-           <strong>round</strong> is one game inside it. You win rounds to win the match.</p>
-      </div>
-
-      <div class="rule-card">
-        <span class="tag">NO DRAWS</span>
-        <h3>A round always has a winner</h3>
-        <p>There are no draws in KOTAO. If a round finishes level, it goes straight to
-           <strong>sudden death</strong>: no time limit, first goal wins.</p>
-        <p>If that mini-match somehow ends goalless too, you replay it again, and again,
-           for as long as it takes. Only the decisive scoreline is recorded &mdash; so a round
-           is never written down as 2&ndash;2.</p>
-      </div>
-
-      <div class="rule-card">
-        <span class="tag">STANDINGS</span>
-        <h3>How you are ranked</h3>
-        <p>Your position comes down to <strong>matches won</strong> first. When two or more
-           teams end up level on that, these separate them, in this exact order:</p>
-        <ol class="ranked">
-          <li><strong>Round difference</strong> &mdash; rounds you won minus rounds you lost</li>
-          <li><strong>Rounds won</strong></li>
-          <li><strong>Goal difference</strong> &mdash; goals scored minus goals conceded</li>
-          <li><strong>Goals scored</strong></li>
-          <li><strong>Head-to-head</strong> &mdash; if you beat the team you are level with,
-              you finish above them</li>
-        </ol>
-        <p>Since no match can end in a draw, head-to-head always settles a tie between two
-           teams. Your name never decides anything: there is no alphabetical tiebreak.</p>
-        <p class="aside">With three or more teams level, head-to-head counts the wins each of
-           them took off the others, then is applied again to any teams still level. The only
-           tie it cannot break is a perfect circle &mdash; A beat B, B beat C, C beat A. Those
-           teams play a <strong>tiebreak match</strong>, and the playoffs wait for its result.</p>
-      </div>
-
+      <div class="rule-card" id="card-schedule"></div>
+      <div class="rule-card" id="card-draws"></div>
+      <div class="rule-card" id="card-standings"></div>
     </div>
   </section>
 
@@ -109,56 +51,8 @@
            6th is not an elimination.</p>
       </div>
 
-      <div class="rule-card">
-        <span class="tag">DOUBLE ELIMINATION</span>
-        <h3>A top-four finish buys you a second chance</h3>
-        <p>Lose in the <strong>Upper Bracket</strong> and you drop into the Lower Bracket
-           instead of being knocked out. Your run continues.</p>
-        <p>Lose in the <strong>Lower Bracket</strong> and the tournament is over for you.
-           Teams that finish 5th or 6th start down there, so for them every playoff match
-           is win-or-go-home.</p>
-        <p class="aside">The Grand Final is the exception: it is a single match with no bracket
-           reset, so whoever loses it is done &mdash; even a team that arrived undefeated.</p>
-      </div>
-
-      <div class="rule-card">
-        <span class="tag">BRACKET</span>
-        <h3>The road to the title</h3>
-        <div class="phase-list">
-          <div class="phase-row">
-            <div class="pname">Upper Bracket Semifinals
-              <span class="pdesc">1st vs 4th &middot; 2nd vs 3rd</span></div>
-            <span class="pbo">BO5</span>
-          </div>
-          <div class="phase-row">
-            <div class="pname">Lower Bracket Quarterfinals
-              <span class="pdesc">5th vs the loser of 1st&ndash;4th &middot; 6th vs the loser of 2nd&ndash;3rd</span></div>
-            <span class="pbo">BO5</span>
-          </div>
-          <div class="phase-row">
-            <div class="pname">Lower Bracket Semifinal
-              <span class="pdesc">The two Quarterfinal winners &middot; the loser finishes fourth</span></div>
-            <span class="pbo">BO5</span>
-          </div>
-          <div class="phase-row">
-            <div class="pname">Upper Bracket Final
-              <span class="pdesc">Winner goes to the Grand Final &middot; loser drops to the Lower Bracket Final</span></div>
-            <span class="pbo">BO7</span>
-          </div>
-          <div class="phase-row">
-            <div class="pname">Lower Bracket Final
-              <span class="pdesc">Upper Bracket Final loser vs Lower Bracket Semifinal winner &middot; the loser finishes third</span></div>
-            <span class="pbo">BO7</span>
-          </div>
-          <div class="phase-row final">
-            <div class="pname">Grand Final
-              <span class="pdesc">One match, winner takes the title</span></div>
-            <span class="pbo">BO7</span>
-          </div>
-        </div>
-        <p class="aside">BO5 means first to three rounds; BO7 means first to four. A series
-           stops the moment one team gets there.</p>
-      </div>
+      <div class="rule-card" id="card-double"></div>
+      <div class="rule-card" id="card-bracket"></div>
 
       <div class="rule-card">
         <span class="tag">FINAL PLACINGS</span>
@@ -187,16 +81,7 @@
         </div>
       </div>
 
-      <div class="rule-card">
-        <span class="tag">GRAND FINAL</span>
-        <h3>No bracket reset</h3>
-        <p>The Grand Final is a <strong>single Best of 7</strong>. Whoever wins it is the
-           champion &mdash; there is no second series for the Upper Bracket team, even though
-           they arrived undefeated.</p>
-        <p class="aside">This is a deliberate choice. A bracket reset would add a second
-           Best of 7 &mdash; up to seven more rounds for two teams who may already have played
-           seven. One final, one champion.</p>
-      </div>
+      <div class="rule-card" id="card-gf"></div>
 
     </div>
   </section>
@@ -229,14 +114,174 @@
 </main>
 
 <footer>
-  <div class="wrap">KOTAO Tournament — generated from the official tracker.
+  <div class="wrap">KOTAO — generated from the official tracker.
     <div id="updated-stamp" class="stamp"></div></div>
 </footer>
 
+<script src="js/logic.js"></script>
 <script src="data/data.js"></script>
 <script src="js/render.js"></script>
 <script>
-initNav('rules');
+const t = buildTournament(pickTournament(RAW_DATA, currentId()));
+renderNav('rules', t);
+document.title = 'Format & Rules — ' + t.name;
+
+// Everything below is written from the tournament's own match formats, so the
+// page can never describe a format the workbook is not actually using.
+const gfmt = t.groupRows[0].stats.format;
+const pfmt = t.playoffs[0].format;
+const gffmt = t.playoffs[7].format;
+const quad = gfmt.kind !== 'bo';
+const set = (id, html) => document.getElementById(id).innerHTML = html;
+
+set('glance', [
+  [t.teams.length, 'Teams'], [5, 'Matchdays'],
+  [t.groupRows.length, 'Group matches'], [t.playoffs.length, 'Playoff matches'],
+].map(([k, v]) => `<div class="glance-item"><div class="k">${k}</div><div class="v">${v}</div></div>`).join(''));
+
+// ------------------------------------------------------------- schedule
+set('card-schedule', `
+  <span class="tag">SCHEDULE</span>
+  <h3>Everyone plays everyone</h3>
+  <p>The group stage runs over <strong>5 matchdays</strong>, and all six teams play on every
+     one of them. You will face each of the other five teams exactly once, which makes
+     <strong>${t.groupRows.length} matches</strong> in total across the group.</p>
+  ${quad ? `
+  <p>Every match is exactly <strong>${gfmt.rounds} rounds</strong>: two hosted in the
+     <strong>EST</strong> region and two in <strong>GMT</strong>, so neither side has the
+     host all night. Every one of them is played, even when a team is already
+     3&ndash;0 up.</p>`
+  : `
+  <p>Every group match is a <strong>Best of ${gfmt.bo}</strong>: the first team to win
+     ${Math.ceil(gfmt.bo / 2)} rounds takes the match, and the rest are not played.</p>`}
+  <p class="aside">In KOTAO a <strong>match</strong> is a series between two teams, and a
+     <strong>round</strong> is one game inside it. You win rounds to win the match.</p>`);
+
+// ---------------------------------------------------------------- draws
+set('card-draws', quad ? `
+  <span class="tag">DRAWS</span>
+  <h3>A round always has a winner &mdash; a match does not</h3>
+  <p>There are no draws inside a round. If a round finishes level it goes straight to
+     <strong>sudden death</strong>: no time limit, first goal wins. If that ends goalless
+     too you replay it, for as long as it takes. Only the decisive scoreline is recorded,
+     so a round is never written down as 2&ndash;2.</p>
+  <p>A match is a different matter. ${gfmt.rounds} rounds can end
+     <strong>${gfmt.rounds / 2}&ndash;${gfmt.rounds / 2}</strong>, and in the group stage
+     that is simply a <strong>draw</strong>. It is a legal result and it is recorded as one.</p>
+  <p class="aside">In the playoffs a match has to produce a winner, so a level match goes to
+     one more sudden-death round &mdash; the <strong>decider</strong>. That extra round
+     settles it, and it is the only time a playoff match runs past ${gfmt.rounds} rounds.</p>`
+: `
+  <span class="tag">NO DRAWS</span>
+  <h3>A round always has a winner</h3>
+  <p>There are no draws in KOTAO. If a round finishes level, it goes straight to
+     <strong>sudden death</strong>: no time limit, first goal wins.</p>
+  <p>If that mini-match somehow ends goalless too, you replay it again, and again,
+     for as long as it takes. Only the decisive scoreline is recorded &mdash; so a round
+     is never written down as 2&ndash;2.</p>`);
+
+// ------------------------------------------------------------ standings
+set('card-standings', `
+  <span class="tag">STANDINGS</span>
+  <h3>How you are ranked</h3>
+  <p>Your position comes down to <strong>matches won</strong> first. When two or more
+     teams end up level on that, these separate them, in this exact order:</p>
+  <ol class="ranked">
+    <li><strong>Round difference</strong> &mdash; rounds you won minus rounds you lost</li>
+    <li><strong>Rounds won</strong></li>
+    <li><strong>Goal difference</strong> &mdash; goals scored minus goals conceded</li>
+    <li><strong>Goals scored</strong></li>
+    <li><strong>Head-to-head</strong> &mdash; if you beat the team you are level with,
+        you finish above them</li>
+  </ol>
+  ${quad ? `
+  <p>A <strong>draw is not a win</strong>: matches won is the first column, and a drawn
+     match adds nothing to it. What puts a draw ahead of a defeat is everything below it
+     &mdash; you leave a draw with your round difference untouched, and a defeat with it
+     down.</p>
+  <p>Head-to-head can only separate two teams if one of them actually won their match.
+     Two teams who drew it stay level, and play a tiebreak match.</p>`
+  : `
+  <p>Since no match can end in a draw, head-to-head always settles a tie between two
+     teams. Your name never decides anything: there is no alphabetical tiebreak.</p>`}
+  <p class="aside">With three or more teams level, head-to-head counts the wins each of
+     them took off the others, then is applied again to any teams still level. Teams it
+     cannot split &mdash; a perfect circle, or two teams who drew &mdash; play a
+     <strong>tiebreak match</strong>, and the playoffs wait for its result. Your name never
+     decides anything: there is no alphabetical tiebreak.</p>`);
+
+// ------------------------------------------------------- double elimination
+set('card-double', `
+  <span class="tag">DOUBLE ELIMINATION</span>
+  <h3>A top-four finish buys you a second chance</h3>
+  <p>Lose in the <strong>Upper Bracket</strong> and you drop into the Lower Bracket
+     instead of being knocked out. Your run continues.</p>
+  <p>Lose in the <strong>Lower Bracket</strong> and the tournament is over for you.
+     Teams that finish 5th or 6th start down there, so for them every playoff match
+     is win-or-go-home.</p>
+  <p class="aside">The Grand Final is the exception: it is a
+     <strong>${esc(formatShort(gffmt))}</strong> with no bracket reset, so whoever loses it
+     is done &mdash; even a team that arrived undefeated.</p>`);
+
+// --------------------------------------------------------------- bracket
+const DESC = {
+  'UB-SF1': '1st vs 4th', 'UB-SF2': '2nd vs 3rd',
+  'LB-QF1': '5th vs the loser of 1st&ndash;4th', 'LB-QF2': '6th vs the loser of 2nd&ndash;3rd',
+  'UB-F': 'Winner goes to the Grand Final &middot; loser drops to the Lower Bracket Final',
+  'LB-SF': 'The two Quarterfinal winners &middot; the loser finishes fourth',
+  'LB-F': 'Upper Bracket Final loser vs Lower Bracket Semifinal winner &middot; the loser finishes third',
+  'GF': 'Winner takes the title',
+};
+const GROUPS = [
+  ['Upper Bracket Semifinals', ['UB-SF1', 'UB-SF2']],
+  ['Lower Bracket Quarterfinals', ['LB-QF1', 'LB-QF2']],
+  ['Lower Bracket Semifinal', ['LB-SF']],
+  ['Upper Bracket Final', ['UB-F']],
+  ['Lower Bracket Final', ['LB-F']],
+  ['Grand Final', ['GF']],
+];
+const byCode = {};
+t.playoffs.forEach(p => byCode[p.code] = p);
+set('card-bracket', `
+  <span class="tag">BRACKET</span>
+  <h3>The road to the title</h3>
+  <div class="phase-list">
+    ${GROUPS.map(([title, codes]) => `
+      <div class="phase-row ${codes[0] === 'GF' ? 'final' : ''}">
+        <div class="pname">${title}
+          <span class="pdesc">${codes.map(c => DESC[c]).join(' &middot; ')}</span></div>
+        <span class="pbo">${esc(formatShort(byCode[codes[0]].format))}</span>
+      </div>`).join('')}
+  </div>
+  <p class="aside">${quad
+    ? `Every playoff match is ${pfmt.rounds} rounds, plus one sudden-death decider round if
+       they end level. The Grand Final alone is a best of ${gffmt.games} of those matches.`
+    : 'BO5 means first to three rounds; BO7 means first to four. A series stops the moment '
+      + 'one team gets there.'}</p>`);
+
+// ---------------------------------------------------------- grand final
+const gfMin = gffmt.kind === 'bo' ? Math.ceil(gffmt.bo / 2)
+  : (Math.floor(gffmt.games / 2) + 1) * gffmt.rounds;
+const gfMax = gffmt.kind === 'bo' ? gffmt.bo
+  : gffmt.games * (gffmt.rounds + (gffmt.decider ? 1 : 0));
+set('card-gf', `
+  <span class="tag">GRAND FINAL</span>
+  <h3>No bracket reset</h3>
+  ${gffmt.kind === 'bo' ? `
+  <p>The Grand Final is a <strong>single Best of ${gffmt.bo}</strong>. Whoever wins it is
+     the champion &mdash; there is no second series for the Upper Bracket team, even though
+     they arrived undefeated.</p>`
+  : `
+  <p>The Grand Final is a <strong>best of ${gffmt.games} matches</strong> of
+     ${gffmt.rounds} rounds each: win two of them and you are champion. That is
+     <strong>${gfMin} rounds</strong> at the very least, and <strong>${gfMax}</strong> at the
+     very most if all ${gffmt.games} need their decider.</p>
+  <p>Whoever wins it is the champion &mdash; there is no second series for the Upper Bracket
+     team, even though they arrived undefeated.</p>`}
+  <p class="aside">This is a deliberate choice. A bracket reset would mean playing the whole
+     Grand Final a second time, for two teams who have already played the longest road in the
+     tournament. One final, one champion.</p>`);
+
 renderUpdatedStamp(RAW_DATA.generatedAt);
 </script>
 </body>

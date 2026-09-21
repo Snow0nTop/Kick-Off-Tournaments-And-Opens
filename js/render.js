@@ -7,15 +7,43 @@ function el(tag, cls, html) {
   return e;
 }
 
-function initNav(active) {
-  document.querySelectorAll('.navlinks a').forEach(a => {
-    if (a.dataset.page === active) a.classList.add('active');
-  });
-}
-
 function esc(s) {
   return String(s == null ? '' : s).replace(/[&<>"']/g,
     c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+// --------------------------------------------------------------- navigation
+// Every page but the hub belongs to one tournament, carried in the address as
+// ?t=<id>. The nav is built here so the id follows the visitor from page to
+// page and no link can be left behind when a tournament is added.
+function currentId() {
+  return new URLSearchParams(location.search).get('t') || '';
+}
+
+function href(page, id) {
+  return id ? page + '?t=' + encodeURIComponent(id) : page;
+}
+
+function renderNav(active, t) {
+  const host = document.getElementById('nav');
+  if (!host) return;
+  const id = t ? t.id : '';
+  const links = [
+    ['overview.html', 'overview', 'Overview'],
+    ['group-stage.html', 'group', 'Group Stage'],
+    ['playoffs.html', 'playoffs', 'Playoffs'],
+    ['rules.html', 'rules', 'Format &amp; Rules'],
+  ];
+  host.innerHTML = `
+    <a class="brand" href="index.html">
+      <img class="tlogo brand-logo" src="logos/kotao.webp" alt=""> KOTAO</a>
+    ${t ? `<span class="nav-sep">/</span><span class="nav-tourney">${esc(t.name)}</span>` : ''}
+    <nav class="navlinks">
+      ${t ? links.map(([p, k, label]) =>
+        `<a href="${href(p, id)}" class="${k === active ? 'active' : ''}">${label}</a>`).join('')
+        : ''}
+      <a href="index.html" class="${active === 'hub' ? 'active' : ''}">All tournaments</a>
+    </nav>`;
 }
 
 // ---------------------------------------------------------------- team logos
@@ -25,7 +53,7 @@ function esc(s) {
 // the champion banner).
 //
 // A team with no matching file falls back to a monogram badge of the same size,
-// so renaming a team in the workbook never breaks a layout - it just loses the
+// so renaming a team in a workbook never breaks a layout - it just loses the
 // crest until someone drops in a file with the matching name.
 const LOGO_SLUGS = new Set([
   'blizzardsfc', 'bmfc', 'califc', 'cerruanosfc', 'crownfc', 'kotao', 'sandmonkeyfc',
@@ -87,16 +115,67 @@ function renderUpdatedStamp(iso) {
   host.innerHTML = `Results last updated <span title="${esc(abs)}">${esc(rel)}</span> &middot; ${esc(abs)}`;
 }
 
+const PHASE_LABEL = {
+  upcoming: 'Upcoming', group: 'Group Stage', tiebreak: 'Tiebreak Pending',
+  playoffs: 'Playoffs', done: 'Completed',
+};
+
 function statusPillHtml(status) {
   let cls = 'pending';
   if (status === 'Finished') cls = 'finished';
   else if (/to play$/.test(status)) cls = 'next';
+  else if (status === 'Draw') cls = 'draw';
   else if (status === 'All rounds played - no winner') cls = 'error';
-  return `<span class="status-pill ${cls}">${status}</span>`;
+  return `<span class="status-pill ${cls}">${esc(status)}</span>`;
 }
 
 function pillRank(n) {
   return `<span class="pos-pill p${n}">${n}</span>`;
+}
+
+// True when this tournament's group matches can end level, which is what
+// decides whether the standings carry a draws column.
+function groupCanDraw(t) {
+  return t.groupRows.some(r => r.stats.format && r.stats.format.kind !== 'bo');
+}
+
+// -------------------------------------------------------------------- hub
+function renderTournamentCards(container, raw) {
+  container.innerHTML = '';
+  (raw.tournaments || []).forEach(entry => {
+    const t = buildTournament(entry);
+    const done = t.phase === 'done';
+    const card = el('a', 'tcard' + (done ? ' done' : ''));
+    card.href = href('overview.html', t.id);
+    const played = [1, 2, 3, 4, 5].filter(
+      d => t.groupRows.filter(r => r.matchday === d).every(r => r.stats.over)).length;
+    const sample = t.groupRows[0].stats.format;
+    card.innerHTML = `
+      <div class="tcard-top">
+        <img class="tlogo tcard-logo" src="logos/kotao.webp" alt="">
+        <div>
+          <div class="tcard-name">${esc(t.name)}</div>
+          <div class="tcard-tag">${esc(t.tagline || '')}</div>
+        </div>
+        <span class="badge ${done ? 'gold' : t.phase === 'upcoming' ? '' : 'live'}">${
+          done ? '\u{1F3C6} ' : t.phase === 'upcoming' ? '' : '● '
+        }${PHASE_LABEL[t.phase]}</span>
+      </div>
+      <div class="tcard-meta">
+        <span>${esc(t.when || '')}</span>
+        <span>${esc(formatLabel(sample))} per match</span>
+        <span>${t.teams.length} teams</span>
+        <span>Matchdays ${played}/5</span>
+      </div>
+      <div class="tcard-foot">
+        ${t.champion
+          ? `<span class="tcard-champ">Champion <span class="team-id">${teamHtml(t.champion, { cls: 'md' })}</span></span>`
+          : `<span class="tcard-teams">${t.teams.slice().sort(byName)
+               .map(n => logoHtml(n, { cls: 'sm', named: true })).join('')}</span>`}
+        <span class="tcard-go">View →</span>
+      </div>`;
+    container.appendChild(card);
+  });
 }
 
 // ---------------------------------------------------------------- standings
@@ -105,6 +184,7 @@ function renderStandingsTable(container, t, opts) {
   // With nothing played the ranking is just the alphabet in disguise, so it is
   // shown as an unordered participant list rather than a fake standing.
   const ranked = t.anyGroupPlayed;
+  const draws = groupCanDraw(t);
   const pending = new Set([].concat(...t.unresolvedTies.map(g => g.teams)));
   const rows = t.standings.map(team => {
     const d = t.groupStats[team];
@@ -112,12 +192,13 @@ function renderStandingsTable(container, t, opts) {
     // decides which of them is printed first, never who is placed higher
     const n = t.rank[team];
     const flag = pending.has(team) ? '<span class="tie-flag">Tiebreak match pending</span>' : '';
+    const record = draws ? `${d.mw}-${d.md}-${d.ml}` : `${d.mw}-${d.ml}`;
     return `<tr${pending.has(team) ? ' class="tied"' : ''}>
       <td class="rank-cell ${ranked && n <= 4 ? 'top4' : ''}">${
         ranked ? pillRank(n) : '<span class="pos-pill tbd">&ndash;</span>'}</td>
       <td class="team"><div class="team-cell"><span class="team-id">${teamHtml(team)}</span>${flag}</div></td>
       <td class="num">${d.mp}</td>
-      <td class="num">${d.mw}-${d.ml}</td>
+      <td class="num">${record}</td>
       ${opts.compact ? '' : `
       <td class="num">${d.rw}-${d.rl}</td>
       <td class="num">${d.rd >= 0 ? '+' : ''}${d.rd}</td>
@@ -125,9 +206,10 @@ function renderStandingsTable(container, t, opts) {
       <td class="num">${d.gd >= 0 ? '+' : ''}${d.gd}</td>`}
     </tr>`;
   }).join('');
+  const record = draws ? 'W-D-L' : 'W-L';
   const head = opts.compact
-    ? '<tr><th>#</th><th>Team</th><th class="num">MP</th><th class="num">W-L</th></tr>'
-    : `<tr><th>#</th><th>Team</th><th class="num">MP</th><th class="num">Matches (W-L)</th>
+    ? `<tr><th>#</th><th>Team</th><th class="num">MP</th><th class="num">${record}</th></tr>`
+    : `<tr><th>#</th><th>Team</th><th class="num">MP</th><th class="num">Matches (${record})</th>
         <th class="num">Rounds (W-L)</th><th class="num">Round +/-</th>
         <th class="num">Goals (F-A)</th><th class="num">Goal +/-</th></tr>`;
   container.innerHTML = `<div class="table-scroll"><table><thead>${head}</thead><tbody>${rows}</tbody></table></div>`;
@@ -135,6 +217,7 @@ function renderStandingsTable(container, t, opts) {
     const legend = el('div', 'legend', ranked
       ? 'Tiebreak order: matches won &gt; round difference &gt; rounds won &gt; goal difference &gt; goals scored &gt; head-to-head. '
         + 'Teams level on all of these share a rank.'
+        + (draws ? ' A drawn match counts as a win for nobody.' : '')
       : 'No matches played yet &mdash; teams are listed alphabetically, not ranked.');
     container.appendChild(legend);
   }
@@ -172,8 +255,8 @@ function renderHeadToHead(container, t) {
       if (rowTeam === colTeam) return '<td class="diag">/</td>';
       const e = seriesOf[rowTeam + '|' + colTeam];
       if (!e || e.s.played === 0) return '<td></td>';
-      const a = e.flip ? e.s.wb : e.s.wa;
-      const b = e.flip ? e.s.wa : e.s.wb;
+      const a = e.flip ? e.s.rb : e.s.ra;
+      const b = e.flip ? e.s.ra : e.s.rb;
       const cls = a > b ? 'win' : (a < b ? 'loss' : '');
       return `<td class="${cls}">${a}-${b}</td>`;
     }).join('');
@@ -197,14 +280,27 @@ function renderMatchdays(container, t) {
   });
 }
 
+// The played rounds of a match, in order. A multi-game series (the Grand
+// Final) keeps its games visibly apart, so "2-1" reads as two games to one
+// rather than as a round score.
+function roundsStripHtml(s, rounds) {
+  const per = slotsPerGame(s.format), n = gameCount(s.format);
+  const parts = [];
+  for (let g = 0; g < n; g++) {
+    const slots = (rounds || []).slice(g * per, (g + 1) * per).filter(Boolean);
+    if (slots.length) parts.push(slots.map(r => `<span>${esc(r)}</span>`).join(''));
+  }
+  return parts.join('<span class="gdiv"></span>');
+}
+
 function matchRow(teamA, teamB, s, rounds) {
   const row = el('div', 'match-row');
   const aWin = s.decided && s.winnerSide === 'a';
   const bWin = s.decided && s.winnerSide === 'b';
   row.appendChild(el('div', 'side', teamHtml(teamA, { cls: 'md', nameCls: 'win-name' + (aWin ? ' winner' : '') })));
   const mid = el('div', null,
-    `<div class="score">${s.played ? s.wa : '-'}<span class="sep">:</span>${s.played ? s.wb : '-'}</div>
-     <div class="rounds-strip">${(rounds || []).filter(Boolean).map(r => `<span>${r}</span>`).join('')}</div>`);
+    `<div class="score${s.drawn ? ' drawn' : ''}">${s.played ? s.wa : '-'}<span class="sep">:</span>${s.played ? s.wb : '-'}</div>
+     <div class="rounds-strip">${roundsStripHtml(s, rounds)}</div>`);
   row.appendChild(mid);
   row.appendChild(el('div', 'side right', teamHtml(teamB, { cls: 'md', nameCls: 'win-name' + (bWin ? ' winner' : '') })));
   row.appendChild(el('div', 'status', statusPillHtml(s.status)));
@@ -248,17 +344,18 @@ function renderBracket(container, t) {
     p._fromA = o[0]; p._fromB = o[1];
   });
 
-  const head = (title, bo, marginCls) =>
-    `<div class="round-head ${marginCls || ''}"><span class="title">${title}</span><div class="bo">Best of ${bo}</div></div>`;
+  const head = (title, p, marginCls) =>
+    `<div class="round-head ${marginCls || ''}"><span class="title">${title}</span>` +
+    `<div class="bo">${esc(formatShort(p.format))}</div></div>`;
   const round = (p, cls) => `<div class="round ${cls}">${bracketMatchHtml(p)}</div>`;
   const pair = (p1, p2, cls) => `<div class="round pair ${cls}">${bracketMatchHtml(p1)}${bracketMatchHtml(p2)}</div>`;
 
   container.innerHTML = `
     <div class="bracket-scroll">
       <div class="bk-top-headers">
-        ${head('Upper Bracket Semifinals', byCode['UB-SF1'].bo, 'mr-long')}
-        ${head('Upper Bracket Final', byCode['UB-F'].bo, 'mr-stub')}
-        ${head('Grand Final', byCode['GF'].bo, '')}
+        ${head('Upper Bracket Semifinals', byCode['UB-SF1'], 'mr-long')}
+        ${head('Upper Bracket Final', byCode['UB-F'], 'mr-stub')}
+        ${head('Grand Final', byCode['GF'], '')}
       </div>
       <div class="bracket-outer">
         <div class="half-stack">
@@ -267,9 +364,9 @@ function renderBracket(container, t) {
             ${round(byCode['UB-F'], 'single')}
           </div>
           <div class="bk-row lb-heads">
-            ${head('Lower Bracket Quarterfinals', byCode['LB-QF1'].bo)}
-            ${head('Lower Bracket Semifinal', byCode['LB-SF'].bo)}
-            ${head('Lower Bracket Final', byCode['LB-F'].bo)}
+            ${head('Lower Bracket Quarterfinals', byCode['LB-QF1'])}
+            ${head('Lower Bracket Semifinal', byCode['LB-SF'])}
+            ${head('Lower Bracket Final', byCode['LB-F'])}
           </div>
           <div class="bk-row lb-row">
             ${pair(byCode['LB-QF1'], byCode['LB-QF2'], '')}
@@ -295,7 +392,8 @@ function renderPlayoffList(container, t) {
   t.playoffs.forEach(p => {
     // without the phase name these rows are indistinguishable from each other
     // before the teams are known - eight identical "TBD vs TBD" lines
-    panel.appendChild(el('div', 'match-kind', `${p.name} &middot; Best of ${p.bo}`));
+    panel.appendChild(el('div', 'match-kind',
+      `${esc(p.name)} &middot; ${esc(formatLabel(p.format))}`));
     panel.appendChild(matchRow(p.teamA, p.teamB, p.stats, p.rounds));
   });
   container.appendChild(panel);

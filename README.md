@@ -1,16 +1,20 @@
 # KOTAO — Kick-Off Tournaments And Opens
 
-The official website of the **KOTAO** tournament: six teams, a round-robin group
-stage, and double-elimination playoffs.
+The official website of the **KOTAO** tournaments: six teams, a round-robin
+group stage, and double-elimination playoffs.
 
 **▶ Live site: <https://snow0ntop.github.io/Kick-Off-Tournaments-And-Opens/>**
 
 ## What's on the site
 
-- **Overview** — tournament status, group leader, latest results and what's next
+- **Home** — every KOTAO tournament, past, running and upcoming
+- **Overview** — one tournament's status, group leader, latest results and what's next
 - **Group Stage** — full standings, head-to-head grid and every matchday
 - **Playoffs** — the double-elimination bracket and all playoff results
-- **Format & Rules** — how the tournament works, tiebreakers included
+- **Format & Rules** — how that tournament works, tiebreakers included
+
+Each tournament carries its own match format, and its Format & Rules page is
+written from the format it actually uses.
 
 ## How it works
 

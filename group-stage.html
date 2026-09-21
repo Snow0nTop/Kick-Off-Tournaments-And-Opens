@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Group Stage — KOTAO Tournament</title>
+<title>Group Stage — KOTAO</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700;800&display=swap" rel="stylesheet">
 <link rel="icon" href="favicon.png">
@@ -12,22 +12,12 @@
 </head>
 <body>
 
-<header class="topbar">
-  <div class="wrap">
-    <div class="brand"><img class="tlogo brand-logo" src="logos/kotao.webp" alt=""> KOTAO</div>
-    <nav class="navlinks">
-      <a href="index.html" data-page="overview">Overview</a>
-      <a href="group-stage.html" data-page="group">Group Stage</a>
-      <a href="playoffs.html" data-page="playoffs">Playoffs</a>
-      <a href="rules.html" data-page="rules">Format &amp; Rules</a>
-    </nav>
-  </div>
-</header>
+<header class="topbar"><div class="wrap" id="nav"></div></header>
 
 <div class="hero">
   <div class="wrap">
     <h1>Group Stage</h1>
-    <div class="tagline">Every team plays every other team once, across 5 matchdays. BO3 per match.</div>
+    <div class="tagline" id="hero-tagline"></div>
   </div>
 </div>
 
@@ -51,7 +41,8 @@
 </main>
 
 <footer>
-  <div class="wrap">KOTAO Tournament — generated from the official tracker. Format details on the <a href="rules.html">Rules page</a>.
+  <div class="wrap">KOTAO — generated from the official tracker. Format details on the
+    <a id="link-rules" href="rules.html">Format &amp; Rules page</a>.
     <div id="updated-stamp" class="stamp"></div></div>
 </footer>
 
@@ -59,8 +50,14 @@
 <script src="data/data.js"></script>
 <script src="js/render.js"></script>
 <script>
-initNav('group');
-const t = buildTournament(RAW_DATA);
+const t = buildTournament(pickTournament(RAW_DATA, currentId()));
+renderNav('group', t);
+document.title = 'Group Stage — ' + t.name;
+document.getElementById('link-rules').href = href('rules.html', t.id);
+document.getElementById('hero-tagline').textContent =
+  'Every team plays every other team once, across 5 matchdays. '
+  + formatLabel(t.groupRows[0].stats.format) + ' per match.';
+
 renderStandingsTable(document.getElementById('standings'), t);
 const tieNote = tieNoticeEl(t);
 if (tieNote) {

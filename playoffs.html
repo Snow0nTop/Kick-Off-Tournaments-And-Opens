@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Playoffs — KOTAO Tournament</title>
+<title>Playoffs — KOTAO</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700;800&display=swap" rel="stylesheet">
 <link rel="icon" href="favicon.png">
@@ -12,17 +12,7 @@
 </head>
 <body>
 
-<header class="topbar">
-  <div class="wrap">
-    <div class="brand"><img class="tlogo brand-logo" src="logos/kotao.webp" alt=""> KOTAO</div>
-    <nav class="navlinks">
-      <a href="index.html" data-page="overview">Overview</a>
-      <a href="group-stage.html" data-page="group">Group Stage</a>
-      <a href="playoffs.html" data-page="playoffs">Playoffs</a>
-      <a href="rules.html" data-page="rules">Format &amp; Rules</a>
-    </nav>
-  </div>
-</header>
+<header class="topbar"><div class="wrap" id="nav"></div></header>
 
 <div class="hero">
   <div class="wrap">
@@ -52,7 +42,8 @@
 </main>
 
 <footer>
-  <div class="wrap">KOTAO Tournament — generated from the official tracker. Format details on the <a href="rules.html">Rules page</a>.
+  <div class="wrap">KOTAO — generated from the official tracker. Format details on the
+    <a id="link-rules" href="rules.html">Format &amp; Rules page</a>.
     <div id="updated-stamp" class="stamp"></div></div>
 </footer>
 
@@ -60,15 +51,17 @@
 <script src="data/data.js"></script>
 <script src="js/render.js"></script>
 <script>
-initNav('playoffs');
-const t = buildTournament(RAW_DATA);
+const t = buildTournament(pickTournament(RAW_DATA, currentId()));
+renderNav('playoffs', t);
+document.title = 'Playoffs — ' + t.name;
+document.getElementById('link-rules').href = href('rules.html', t.id);
+
 if (!t.allDecided) {
   document.getElementById('locked-note').style.display = '';
 } else if (!t.seedingSettled) {
-  const tieNote = tieNoticeEl(t);
   const host = document.getElementById('locked-note');
   host.innerHTML = '';
-  host.appendChild(tieNote);
+  host.appendChild(tieNoticeEl(t));
   host.style.display = '';
 }
 renderBracket(document.getElementById('bracket'), t);

@@ -436,3 +436,58 @@ footer { border-top: 1px solid var(--border); padding: 24px 0 40px; color: var(-
   /* a stacked match row centres its two sides, so the crests lead both names */
   .match-row .side, .match-row .side.right { justify-content: center; }
 }
+
+/* ---------- multi-tournament nav + hub ---------- */
+a.brand { text-decoration: none; }
+a.brand:hover { color: var(--accent); }
+.nav-sep { color: var(--text-mute); font-size: 20px; flex: none; }
+.nav-tourney {
+  color: var(--text-dim); font-weight: 700; font-size: 15px; flex: none;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 30vw;
+}
+
+.tcards { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.tcard {
+  display: block; text-decoration: none; color: inherit;
+  background: var(--bg-panel); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 20px 22px;
+  transition: border-color .15s, transform .15s;
+}
+.tcard:hover { border-color: var(--accent); transform: translateY(-2px); }
+.tcard.done { border-color: color-mix(in srgb, var(--gold) 35%, var(--border)); }
+.tcard-top { display: flex; align-items: flex-start; gap: 14px; }
+.tlogo.tcard-logo { width: 44px; height: 44px; flex: none; }
+.tcard-top > div { flex: 1; min-width: 0; }
+.tcard-top .badge { flex: none; margin: 0; }
+.tcard-name { font-size: 21px; font-weight: 800; line-height: 1.2; }
+.tcard-tag { color: var(--text-dim); font-size: 14px; margin-top: 3px; }
+.tcard-meta {
+  display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 16px 0 14px;
+  color: var(--text-mute); font-size: 13px; font-weight: 600;
+}
+.tcard-meta span:empty { display: none; }
+.tcard-foot {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  border-top: 1px solid var(--border); padding-top: 14px;
+}
+.tcard-teams { display: flex; gap: 6px; flex-wrap: wrap; }
+.tcard-champ { display: flex; align-items: center; gap: 8px; color: var(--gold);
+               font-size: 13px; font-weight: 700; text-transform: uppercase; }
+.tcard-champ .tname { color: var(--text); text-transform: none; font-size: 15px; }
+.tcard-go { color: var(--accent); font-weight: 700; font-size: 14px; flex: none; }
+
+.panel.about { padding: 20px 22px; color: var(--text-dim); }
+.panel.about p { margin: 0 0 10px; line-height: 1.65; }
+.panel.about p:last-child { margin-bottom: 0; }
+
+/* ---------- drawn matches, multi-game series ---------- */
+.status-pill.draw { background: rgba(242,182,50,.14); color: var(--gold); }
+.match-row .score.drawn { color: var(--gold); }
+.rounds-strip .gdiv {
+  width: 1px; align-self: stretch; background: var(--border-lt); margin: 2px 3px;
+}
+
+@media (max-width: 760px) {
+  .tcards { grid-template-columns: 1fr; }
+  .nav-sep, .nav-tourney { display: none; }
+}
