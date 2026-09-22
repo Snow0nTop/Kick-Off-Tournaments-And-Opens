@@ -25,6 +25,8 @@
   --accent-dim:#2b3a5c;
   --win:       #3ecf8e;
   --loss:      #ff5d6c;
+  --draw:      #b9c2d6;  /*  7.8:1 on a drawn cell - neither green nor red */
+  --draw-bg:   #8792a8;  /*  laid over the cell at low opacity */
   --gold:      #f2b632;
   --radius:    10px;
   --maxw:      1160px;
@@ -206,6 +208,9 @@ td.team, tbody th.team { font-weight: 700; text-align: left; }
 .status-pill.pending { background: rgba(148,156,176,.12); color: var(--text-dim); }
 .status-pill.error { background: rgba(255,93,108,.15); color: var(--loss); }
 .status-pill.level { background: rgba(242,182,50,.14); color: var(--gold); }
+.status-pill.drawn { background: rgba(135,146,168,.18); color: var(--draw); }
+/* points decide the table, so they are the one bold number in the row */
+td.pts, th.pts { font-weight: 800; color: var(--text); }
 
 /* ---------- team crests ----------
    One square box per crest, whatever the artwork's own proportions: the files
@@ -266,7 +271,9 @@ tr.tied td { background: color-mix(in srgb, var(--gold) 5%, transparent); }
 .h2h td .h2h-g { font-size: .875rem; color: var(--text-mute); }
 .h2h .win { color: var(--win); font-weight: 700; background: color-mix(in srgb, var(--win) 14%, transparent); }
 .h2h .loss { color: var(--loss); font-weight: 700; background: color-mix(in srgb, var(--loss) 14%, transparent); }
-.h2h .win .h2h-g, .h2h .loss .h2h-g { color: inherit; opacity: .85; }
+.h2h .draw { color: var(--draw); font-weight: 700;
+  background: color-mix(in srgb, var(--draw-bg) 18%, transparent); }
+.h2h .win .h2h-g, .h2h .loss .h2h-g, .h2h .draw .h2h-g { color: inherit; opacity: .85; }
 .h2h .diag { color: var(--text-mute); }
 
 /* ---------- bracket ----------

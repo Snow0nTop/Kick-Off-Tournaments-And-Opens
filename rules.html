@@ -137,6 +137,8 @@ const gfmt = t.groupRows[0].stats.format;
 const pfmt = t.playoffs[0].format;
 const gffmt = t.playoffs[7].format;
 const agg = gfmt.kind === 'agg';
+// only the aggregate group stage can be drawn; its playoffs cannot
+const draws = !!gfmt.draw;
 const set = (id, html) => document.getElementById(id).innerHTML = html;
 
 set('glance', [
@@ -154,10 +156,13 @@ set('card-schedule', `
   ${agg ? `
   <p>A match is <strong>${gfmt.rounds} rounds</strong>: two hosted in the <strong>EST</strong>
      region and two in <strong>GMT</strong>, so neither side has the host all night. All
-     four are played, whatever the scores.</p>
+     four are played, whatever the scores &mdash; a group match is never longer and never
+     shorter, so a matchday is always ${t.groupRows.length / 5 * gfmt.rounds} rounds.</p>
   <p>The winner is the team with more <strong>goals added up across those four rounds</strong>
      &mdash; not the team that won more of them. Win three rounds to one and you can still
-     lose the match, if the round you lost was lost heavily enough.</p>`
+     lose the match, if the round you lost was lost heavily enough.</p>
+  ${draws ? `<p>Level on goals after the four? The match is a <strong>draw</strong>, and both
+     teams take a point.</p>` : ''}`
   : `
   <p>Every group match is a <strong>Best of ${gfmt.bo}</strong>: the first team to win
      ${Math.ceil(gfmt.bo / 2)} rounds takes the match, and the rest are not played.</p>`}
@@ -168,16 +173,20 @@ set('card-schedule', `
 
 // ---------------------------------------------------------------- draws
 set('card-draws', agg ? `
-  <span class="tag">NO DRAWS</span>
-  <h3>Level on goals? Two more rounds</h3>
-  <p>A <strong>round</strong> never ends level. If it does it goes straight to
-     <strong>sudden death</strong>: no time limit, first goal wins. If that ends goalless
-     too you replay it, for as long as it takes. Only the decisive scoreline is recorded,
-     so a round is never written down as 2&ndash;2.</p>
-  <p>A <strong>match</strong> cannot be drawn either. If the goals are level after the four
-     rounds, you play <strong>${gfmt.extra} more rounds</strong> &mdash; one in each region &mdash;
-     add them on. Still level? Two more. A match therefore runs 4, 6, 8, 10 rounds and so
-     on, until one team is ahead on goals.</p>
+  <span class="tag">DRAWS</span>
+  <h3>A group match can end level. A playoff match cannot.</h3>
+  <p>A <strong>round</strong> may end level, and when it does it is worth
+     <strong>half a win to each side</strong>. That is why the standings show rounds like
+     2.5&ndash;1.5: nobody is credited with beating anybody, and nobody is robbed of the
+     round either.</p>
+  <p>A <strong>group match</strong> level on goals after its four rounds is a
+     <strong>draw</strong>. Both teams take a point &mdash; against 3 for a win and 0 for a
+     loss &mdash; and nothing else is played. Beating a stronger side is worth three times a
+     draw, but holding one still puts something on the board.</p>
+  <p>In the <strong>playoffs</strong> there are no draws, because somebody has to go
+     through. Level on goals after the four rounds means <strong>${pfmt.extra} more
+     rounds</strong> &mdash; one in each region &mdash; added on. Still level? Two more. A
+     playoff match therefore runs 4, 6, 8, 10 rounds and so on, until one team is ahead.</p>
   <p class="aside">Extra rounds always come as a pair, one in each region, so the two sides
      stay exactly even on host advantage however long a match goes on.</p>`
 : `
@@ -193,9 +202,12 @@ set('card-draws', agg ? `
 set('card-standings', agg ? `
   <span class="tag">STANDINGS</span>
   <h3>How you are ranked</h3>
-  <p>Your position comes down to <strong>matches won</strong> first. When two or more
-     teams end up level on that, these separate them, in this exact order:</p>
+  <p>A win is worth <strong>3 points</strong>, a draw <strong>1</strong>, a loss
+     <strong>0</strong>. Your position comes down to <strong>points</strong> first. When two
+     or more teams end up level on them, these separate them, in this exact order:</p>
   <ol class="ranked">
+    <li><strong>Matches won</strong> &mdash; four wins and three draws beat five wins and
+        no draws on points alone, so outright wins are counted next</li>
     <li><strong>Goal difference</strong> &mdash; goals scored minus goals conceded</li>
     <li><strong>Round difference</strong> &mdash; rounds won minus rounds lost</li>
     <li><strong>Head-to-head</strong> &mdash; if you beat the team you are level with,
@@ -205,12 +217,13 @@ set('card-standings', agg ? `
   <p>Only the <em>differences</em> count, never the raw totals. A team that has won more
      rounds may well have lost more of them too, and a team that has scored more goals may
      have conceded more; what the table compares is what you are up by.</p>
-  <p>No match can be drawn, so two level teams always have a winner between them: their
-     head-to-head settles it.</p>
+  <p>A drawn match counts for neither team in head-to-head, so two teams that drew with
+     each other and are level on everything else stay level.</p>
   <p class="aside">With three or more teams level, head-to-head counts the wins each of
-     them took off the others, then is applied again to any teams still level. The only
-     tie it cannot break is a perfect circle &mdash; A beat B, B beat C, C beat A. Those
-     teams play a <strong>tiebreak match</strong>, and the playoffs wait for its result.
+     them took off the others, then is applied again to any teams still level. What it
+     cannot break is a perfect circle &mdash; A beat B, B beat C, C beat A &mdash; or a tie
+     between two teams whose own match was drawn. Those teams play a
+     <strong>tiebreak match</strong>, and the playoffs wait for its result.
      Your name never decides anything: there is no alphabetical tiebreak.</p>`
 : `
   <span class="tag">STANDINGS</span>
@@ -276,9 +289,10 @@ set('card-bracket', `
       </div>`).join('')}
   </div>
   <p class="aside">${agg
-    ? `Nothing changes in the playoffs: every match is ${pfmt.rounds} rounds, most goals
-       wins, and two more rounds are played for as long as the goals stay level. The Grand
-       Final alone is a best of ${gffmt.games} of those matches.`
+    ? `Every playoff match is ${pfmt.rounds} rounds and most goals wins, exactly as in the
+       group stage &mdash; but here a draw is not an option, so two more rounds are played
+       for as long as the goals stay level. The Grand Final alone is a best of
+       ${gffmt.games} of those matches.`
     : 'BO5 means first to three rounds; BO7 means first to four. A series stops the moment '
       + 'one team gets there.'}</p>`);
 
@@ -292,9 +306,10 @@ set('card-gf', `
      they arrived undefeated.</p>`
   : `
   <p>The Grand Final is a <strong>best of ${gffmt.games} matches</strong>. Each one is played
-     exactly like any other &mdash; ${gffmt.rounds} rounds, most goals wins, extra rounds
-     while level &mdash; and each one won is worth <strong>one point</strong>. The first team
-     to <strong>two points</strong> is the champion, so it ends 2&ndash;0 or 2&ndash;1.</p>
+     like any other playoff match &mdash; ${gffmt.rounds} rounds, most goals wins, extra
+     rounds while level &mdash; and each one won is worth <strong>one point</strong>. The
+     first team to <strong>two points</strong> is the champion, so it ends 2&ndash;0 or
+     2&ndash;1.</p>
   <p>That is at least <strong>${(Math.floor(gffmt.games / 2) + 1) * gffmt.rounds}
      rounds</strong>, and more whenever a match needs extra ones. Whoever wins it is the
      champion &mdash; there is no second series for the Upper Bracket team, even though

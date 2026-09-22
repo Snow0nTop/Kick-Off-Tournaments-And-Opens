@@ -153,6 +153,7 @@ const PHASE_LABEL = {
 function statusPillHtml(status) {
   let cls = 'pending';
   if (status === 'Finished') cls = 'finished';
+  else if (status === 'Drawn') cls = 'drawn';
   else if (/to play$/.test(status)) cls = 'next';
   else if (/^Still level/.test(status)) cls = 'level';
   else if (status === 'All rounds played - no winner') cls = 'error';
@@ -222,6 +223,8 @@ function renderStandingsTable(container, t, opts) {
   // shown as an unordered participant list rather than a fake standing.
   const ranked = t.anyGroupPlayed;
   const agg = isAgg(t);
+  // a format whose group matches can end level ranks on points first
+  const draws = !!(t.groupRows[0] && t.groupRows[0].stats.format.draw);
   const pending = new Set([].concat(...t.unresolvedTies.map(g => g.teams)));
   const rows = t.standings.map(team => {
     const d = t.groupStats[team];
@@ -234,13 +237,18 @@ function renderStandingsTable(container, t, opts) {
         + '<span class="visually-hidden">Not ranked yet</span>';
     const goals = `<td class="num">${d.gf}-${d.ga}</td>
       <td class="num">${d.gd >= 0 ? '+' : ''}${d.gd}</td>`;
+    // rounds can be shared: a level round is half a win each, so 2.5-1.5
     const rounds = `<td class="num">${d.rw}-${d.rl}</td>
       <td class="num">${d.rd >= 0 ? '+' : ''}${d.rd}</td>`;
+    // points only exist where a match can be drawn
+    const pts = draws ? `<td class="num pts">${d.pts}</td>` : '';
+    const record = draws ? `${d.mw}-${d.md}-${d.ml}` : `${d.mw}-${d.ml}`;
     return `<tr${pending.has(team) ? ' class="tied"' : ''}>
       <td class="rank-cell">${pos}</td>
       <th scope="row" class="team"><div class="team-cell"><span class="team-id">${teamHtml(team)}</span>${flag}</div></th>
       <td class="num">${d.mp}</td>
-      <td class="num">${d.mw}-${d.ml}</td>
+      ${pts}
+      <td class="num">${record}</td>
       ${opts.compact ? '' : (agg ? goals + rounds : rounds + goals)}
     </tr>`;
   }).join('');
@@ -251,18 +259,23 @@ function renderStandingsTable(container, t, opts) {
   const lead = th('<span aria-hidden="true">#</span>'
                   + '<span class="visually-hidden">Position</span>')
              + th('Team')
-             + th('<abbr title="Matches played">MP</abbr>', 'num');
+             + th('<abbr title="Matches played">MP</abbr>', 'num')
+             + (draws ? th('<abbr title="Points">Pts</abbr>', 'num pts') : '');
+  const wdl = draws ? 'Won-Drawn-Lost' : 'Won-Lost';
   const head = '<tr>' + lead + (opts.compact
-    ? th('<abbr title="Won-Lost">W-L</abbr>', 'num')
-    : th('Matches (W-L)', 'num') + (agg ? gcols + rcols : rcols + gcols)) + '</tr>';
+    ? th(`<abbr title="${wdl}">${draws ? 'W-D-L' : 'W-L'}</abbr>`, 'num')
+    : th(`Matches (${draws ? 'W-D-L' : 'W-L'})`, 'num')
+      + (agg ? gcols + rcols : rcols + gcols)) + '</tr>';
   container.innerHTML = `<div class="table-scroll"><table>`
     + `<caption class="visually-hidden">Group stage standings</caption>`
     + `<thead>${head}</thead><tbody>${rows}</tbody></table></div>`;
   if (!opts.compact) {
     const legend = el('div', 'legend', ranked
       ? (agg
-          ? 'Tiebreak order: matches won &gt; goal difference &gt; round difference &gt; head-to-head. '
-            + 'Goals are what win a match, so they rank above rounds.'
+          ? 'Win 3 points, draw 1, loss 0. Tiebreak order: points &gt; matches won &gt; '
+            + 'goal difference &gt; round difference &gt; head-to-head. '
+            + 'Goals are what win a match, so they rank above rounds. '
+            + 'A level round is half a win to each side.'
           : 'Tiebreak order: matches won &gt; round difference &gt; rounds won &gt; goal difference &gt; goals scored &gt; head-to-head. ')
         + 'Teams level on all of these share a rank.'
       : 'No matches played yet &mdash; teams are listed alphabetically, not ranked.');
@@ -313,13 +326,19 @@ function renderHeadToHead(container, t) {
       const ga = e.flip ? e.s.gb : e.s.ga, gb = e.flip ? e.s.ga : e.s.gb;
       // whichever number decides the match is the one that colours the cell
       const [a, b] = agg ? [ga, gb] : [ra, rb];
-      const cls = a > b ? 'win' : (a < b ? 'loss' : '');
+      // A format that allows draws is coloured by the match's own verdict
+      // instead: level is a result, not the absence of one, and a match still
+      // being played has no result yet. A format that cannot be drawn keeps
+      // comparing the numbers, which comes to the same thing once it is over.
+      const rowWon = e.s.decided && ((e.s.winnerSide === 'a') !== e.flip);
+      const cls = e.s.format.draw
+        ? (e.s.drawn ? 'draw' : e.s.decided ? (rowWon ? 'win' : 'loss') : '')
+        : (a > b ? 'win' : (a < b ? 'loss' : ''));
       // The colour is a shortcut, not the only signal: the scores are printed
       // row-team-first, so 18-17 says "won" to anyone reading the numbers, and
       // a screen reader is told the result outright.
-      const res = cls
-        ? `<span class="visually-hidden">${cls === 'win' ? 'Won' : 'Lost'}, </span>`
-        : '';
+      const word = { win: 'Won', loss: 'Lost', draw: 'Drawn' }[cls];
+      const res = word ? `<span class="visually-hidden">${word}, </span>` : '';
       // rounds on top, goals underneath in a smaller size - goals win the match
       return agg
         ? `<td class="${cls}">${res}<span class="h2h-r">${ra}-${rb}` +

@@ -8,9 +8,13 @@
 //
 //   agg   a match is 4 rounds - 2 hosted in the EST region, 2 in GMT - and the
 //         team with more GOALS added up across them wins it. Rounds won do not
-//         decide anything. Level on goals after 4 rounds? Two more rounds, one
-//         per region, again and again until the goals differ. So a match runs
-//         4, 6, 8 ... rounds and can never be drawn.
+//         decide anything. A round may end level, and then it is worth half a
+//         win to each side, so rounds read 2.5-1.5 as readily as 3-1.
+//         In the GROUP STAGE the four rounds are all there is: level on goals
+//         means the match is DRAWN, worth a point to each side (3/1/0).
+//         In the PLAYOFFS a draw is impossible - level on goals means two more
+//         rounds, one per region, again and again, so a match runs 4, 6, 8 ...
+//         The group format carries `draw: true`; the playoff one does not.
 //   bo    a best-of series. First to ceil(bo/2) ROUNDS takes the match, and the
 //         remaining rounds are not played. An odd bo means no draw.
 //
@@ -44,8 +48,10 @@ const PLAYOFF_PHASES = [
 // a second head-to-head pass and the custom tiebreak match are appended to
 // both - see rankTeams(). There is deliberately no alphabetical last resort.
 const CHAINS = {
-  // goals decide a match, so goal difference outranks round difference
-  agg: ['mw', 'gd', 'rd'],
+  // a group match can be drawn, so points lead; then matches won, because two
+  // teams on equal points have not necessarily won the same number; then goals,
+  // which are what win a match, and only then rounds
+  agg: ['pts', 'mw', 'gd', 'rd'],
   // rounds decide a match, so round difference comes first
   bo:  ['mw', 'rd', 'rw', 'gd', 'gf'],
 };
@@ -139,8 +145,10 @@ function seriesStats(rounds, format) {
       na += sc[0]; nb += sc[1];
       if (sc[0] > sc[1]) wa++;
       else if (sc[1] > sc[0]) wb++;
-      // a genuine draw ("2-2") should never occur inside a round - sudden
-      // death replaces it - but if one slips in, it credits nobody
+      // a level round is shared: half a win each, so a four-round match can
+      // read 2.5-1.5. Only the aggregate format allows it; a best-of round
+      // goes to sudden death and credits nobody if one somehow slips in
+      else if (fmt.kind === 'agg') { wa += 0.5; wb += 0.5; }
     }
     played += n;
     ra += wa; rb += wb; ga += na; gb += nb;
@@ -151,6 +159,10 @@ function seriesStats(rounds, format) {
       over = Math.max(wa, wb) >= toWinRounds || n >= fmt.bo;
       if (wa >= toWinRounds) winner = 'a';
       else if (wb >= toWinRounds) winner = 'b';
+    } else if (fmt.draw) {
+      // group stage: the four rounds are the whole match, level or not
+      over = n >= fmt.rounds;
+      if (over && na !== nb) winner = na > nb ? 'a' : 'b';
     } else {
       // complete only on a whole block: the base 4, then every extra pair
       const whole = n >= fmt.rounds && (n - fmt.rounds) % fmt.extra === 0;
@@ -177,12 +189,16 @@ function seriesStats(rounds, format) {
   const wa = multi ? gamesA : (fmt.kind === 'agg' ? ga : ra);
   const wb = multi ? gamesB : (fmt.kind === 'agg' ? gb : rb);
   const over = decided || (multi ? games.every(g => g.over) : games[0].over);
-  // only an even best-of could end level; every format here is built not to
+  // a group match left level on goals after its four rounds; nothing else here
+  // can end this way, because every other format plays on until it is split
   const drawn = !multi && over && !decided;
 
   let status;
   if (played === 0) status = 'Not started';
   else if (decided) status = 'Finished';
+  // only a format that allows draws reports one; anywhere else a match that is
+  // over with no winner is a mistyped level round, and must still say so
+  else if (drawn && fmt.draw) status = 'Drawn';
   else if (!next) status = fmt.kind === 'agg' ? 'Still level - play two more rounds'
                                               : 'All rounds played - no winner';
   else if (multi) {
@@ -198,7 +214,8 @@ function computeGroupStage(teams, groupMatches) {
   // groupMatches[i] = {a, b, format, rounds} with a/b as 1-based positions in
   // `teams`, in calendar order (matchday 1's three matches, then matchday 2's...).
   const stats = {};
-  teams.forEach(t => stats[t] = { mp: 0, mw: 0, ml: 0, rw: 0, rl: 0, gf: 0, ga: 0 });
+  teams.forEach(t => stats[t] =
+    { mp: 0, mw: 0, md: 0, ml: 0, rw: 0, rl: 0, gf: 0, ga: 0 });
 
   const rows = [];
   let idx = 0;
@@ -216,6 +233,8 @@ function computeGroupStage(teams, groupMatches) {
         da.gf += s.ga; da.ga += s.gb; db.gf += s.gb; db.ga += s.ga;
         if (s.decided) {
           if (s.winnerSide === 'a') { da.mw++; db.ml++; } else { db.mw++; da.ml++; }
+        } else if (s.drawn) {
+          da.md++; db.md++;
         }
       }
     });
@@ -224,6 +243,7 @@ function computeGroupStage(teams, groupMatches) {
     const d = stats[t];
     d.rd = d.rw - d.rl;
     d.gd = d.gf - d.ga;
+    d.pts = d.mw * 3 + d.md;            // win 3, draw 1, loss 0
   });
   return { rows, stats };
 }
@@ -232,10 +252,11 @@ function computeGroupStage(teams, groupMatches) {
 // the custom tiebreak match - exactly as in the workbooks.
 //
 // Head-to-head is a mini-league: among teams level on the chain, count how many
-// of those teams each one beat. No match can be drawn, so two level teams are
-// always split by the match they played; only a circle - three or more level
-// teams that beat each other in turn (A>B, B>C, C>A) - survives it. Those teams
-// play a custom tiebreak match, recorded by admins as "tiebreak match wins".
+// of those teams each one beat - a drawn match counts for neither. Two level
+// teams are split by the match they played unless that match was itself drawn;
+// a circle survives it too - three or more level teams that beat each other in
+// turn (A>B, B>C, C>A). Those teams play a custom tiebreak match, recorded by
+// admins as "tiebreak match wins".
 function rankTeams(teams, stats, rows, chain) {
   chain = chain || CHAINS.bo;
   // Head-to-head is applied twice, like UEFA: first among all teams level on
