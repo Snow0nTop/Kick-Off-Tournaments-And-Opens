@@ -50,6 +50,19 @@ const CHAINS = {
   bo:  ['mw', 'rd', 'rw', 'gd', 'gf'],
 };
 
+// A workbook whose TEAMS block is still empty - an event announced before its
+// line-up is known. Every slot still needs its own identity, or six blank names
+// would collapse into one team in the standings and one row in the head-to-head
+// grid. Each empty slot therefore gets a marker name, and the site prints TBD
+// wherever one turns up. The marker is deliberately printable: if it ever
+// escaped to the screen it would be obvious rather than invisible.
+const BLANK_PREFIX = '@@slot-';
+const BLANK = i => BLANK_PREFIX + (i + 1);
+
+function isBlankTeam(name) {
+  return !name || String(name).startsWith(BLANK_PREFIX);
+}
+
 // Alphabetical order the way Excel sorts: case-insensitive, so "BM FC" comes
 // after "Blizzards FC" here exactly as it does in the workbook.
 function byName(a, b) {
@@ -301,7 +314,12 @@ function computePlayoffs(rankByTeam, teams, playoffMatches, seedingSettled) {
 }
 
 function buildTournament(raw) {
-  const { teams, groupMatches, playoffMatches } = raw;
+  const { groupMatches, playoffMatches } = raw;
+  const teams = (raw.teams || []).map((n, i) => {
+    const name = n == null ? '' : String(n).trim();
+    return name || BLANK(i);
+  });
+  const namedTeams = teams.filter(t => !isBlankTeam(t)).length;
   const tiebreakWins = raw.tiebreakWins || [];
   const { rows: groupRows, stats: groupStats } = computeGroupStage(teams, groupMatches);
   teams.forEach((t, i) => { groupStats[t].tb = Number(tiebreakWins[i]) || 0; });
@@ -331,8 +349,8 @@ function buildTournament(raw) {
     : !allDecided ? (anyGroupPlayed ? 'group' : 'upcoming')
     : !seedingSettled ? 'tiebreak'
     : 'playoffs';
-  return { ...raw, teams, kind, chain: CHAINS[kind], groupRows, groupStats, rank,
-           standings, allDecided, anyGroupPlayed, anyPlayoffPlayed, seedingSettled,
+  return { ...raw, teams, namedTeams, kind, chain: CHAINS[kind], groupRows, groupStats,
+           rank, standings, allDecided, anyGroupPlayed, anyPlayoffPlayed, seedingSettled,
            unresolvedTies, playoffs, champion, phase };
 }
 
@@ -345,7 +363,7 @@ function pickTournament(raw, id) {
 // Bridge for the Node-based parity test harness; harmless in the browser
 // (module is undefined there, so this line never runs).
 if (typeof module !== 'undefined') {
-  module.exports = { byName, parseRound, seriesStats, computeGroupStage, rankTeams,
+  module.exports = { byName, isBlankTeam, parseRound, seriesStats, computeGroupStage, rankTeams,
                      tiedGroups, computePlayoffs, buildTournament, pickTournament,
                      formatLabel, formatShort, scoreUnit, slotsPerGame, gameCount,
                      SCHEDULE, PLAYOFF_PHASES, CHAINS };

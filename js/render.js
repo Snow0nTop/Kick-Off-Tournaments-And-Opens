@@ -74,6 +74,9 @@ function teamSlug(name) {
 // hover tooltip would leave a phone user with nothing to read.
 function teamCodes(teams) {
   const base = n => {
+    // a slot with no team yet is labelled by its place in the list, not by a
+    // name it does not have
+    if (isBlankTeam(n)) return '#' + (String(n).split('-')[1] || '?');
     const words = String(n || '').replace(/\bFC\b/gi, '').trim().split(/\s+/);
     return (words.length > 1 ? words.map(w => w[0]).join('') : words[0] || '?')
       .toUpperCase().slice(0, 3);
@@ -101,7 +104,7 @@ function monogram(name) {
 function logoHtml(name, opts) {
   opts = opts || {};
   const cls = 'tlogo' + (opts.cls ? ' ' + opts.cls : '');
-  if (!name) return `<span class="${cls} tlogo-empty"></span>`;
+  if (isBlankTeam(name)) return `<span class="${cls} tlogo-empty"></span>`;
   const label = opts.named ? ` title="${esc(name)}"` : '';
   const slug = teamSlug(name);
   if (!LOGO_SLUGS.has(slug)) {
@@ -115,8 +118,9 @@ function logoHtml(name, opts) {
 // "TBD" everywhere on the site - never a blank, and never a guess.
 function teamHtml(name, opts) {
   opts = opts || {};
-  const cls = 'tname' + (opts.nameCls ? ' ' + opts.nameCls : '') + (name ? '' : ' tbd');
-  return logoHtml(name, opts) + `<span class="${cls}">${esc(name || 'TBD')}</span>`;
+  const blank = isBlankTeam(name);
+  const cls = 'tname' + (opts.nameCls ? ' ' + opts.nameCls : '') + (blank ? ' tbd' : '');
+  return logoHtml(name, opts) + `<span class="${cls}">${esc(blank ? 'TBD' : name)}</span>`;
 }
 
 // Stamps the footer with when the data was last published. For spectators it
@@ -195,14 +199,16 @@ function renderTournamentCards(container, raw) {
       <div class="tcard-meta">
         <span>${esc(t.when || '')}</span>
         <span>${esc(formatLabel(sample))}</span>
-        <span>${t.teams.length} teams</span>
+        <span>${t.namedTeams ? t.teams.length + ' teams' : 'Teams to be announced'}</span>
         <span>Matchdays ${played}/5</span>
       </div>
       <div class="tcard-foot">
         ${t.champion
           ? `<span class="tcard-champ">Champion <span class="team-id">${teamHtml(t.champion, { cls: 'md' })}</span></span>`
-          : `<span class="tcard-teams">${t.teams.slice().sort(byName)
-               .map(n => logoHtml(n, { cls: 'sm', named: true })).join('')}</span>`}
+          : t.namedTeams
+          ? `<span class="tcard-teams">${t.teams.slice().sort(byName)
+               .map(n => logoHtml(n, { cls: 'sm', named: true })).join('')}</span>`
+          : `<span class="tcard-teams tcard-empty">Line-up not drawn yet</span>`}
         <span class="tcard-go">View →</span>
       </div>`;
     container.appendChild(card);
@@ -295,7 +301,8 @@ function renderHeadToHead(container, t) {
   let head = '<tr><td></td>' +
     alpha.map(a => `<th scope="col" class="h2h-col">${logoHtml(a, { cls: 'md' })}`
       + `<span class="h2h-abbr" aria-hidden="true">${esc(codes[a])}</span>`
-      + `<span class="visually-hidden">${esc(a)}</span></th>`).join('') +
+      + `<span class="visually-hidden">${isBlankTeam(a)
+          ? 'Team ' + esc(codes[a].slice(1)) + ', to be announced' : esc(a)}</span></th>`).join('') +
     '</tr>';
   let rows = alpha.map(rowTeam => {
     const cells = alpha.map(colTeam => {

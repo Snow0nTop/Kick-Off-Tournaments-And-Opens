@@ -518,6 +518,8 @@ a.brand:hover { color: var(--accent); }
   border-top: 1px solid var(--border); padding-top: .875rem; flex-wrap: wrap;
 }
 .tcard-teams { display: flex; gap: .4rem; flex-wrap: wrap; }
+.tcard-teams.tcard-empty { color: var(--text-mute); font-size: .875rem; font-weight: 600;
+                           font-style: italic; }
 .tcard-champ { display: flex; align-items: center; gap: .5rem; color: var(--gold);
                font-size: .875rem; font-weight: 700; text-transform: uppercase;
                flex-wrap: wrap; min-width: 0; }
