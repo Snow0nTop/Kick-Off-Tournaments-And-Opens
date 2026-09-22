@@ -94,7 +94,7 @@ document.getElementById('hero-badges').innerHTML = `
     t.champion ? '🏆 ' : t.phase === 'upcoming' ? '' : '● '}${PHASE_LABEL[t.phase]}</span>
   <span class="badge">${t.teams.length} Teams</span>
   <span class="badge">Group Stage: ${daysDone}/5 matchdays</span>
-  <span class="badge">${esc(matchFormat)} per match</span>
+  <span class="badge">Each match: ${esc(matchFormat)}</span>
   <span class="badge">Double Elimination Playoffs</span>
 `;
 

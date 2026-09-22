@@ -131,7 +131,7 @@ document.title = 'Format & Rules — ' + t.name;
 const gfmt = t.groupRows[0].stats.format;
 const pfmt = t.playoffs[0].format;
 const gffmt = t.playoffs[7].format;
-const quad = gfmt.kind !== 'bo';
+const agg = gfmt.kind === 'agg';
 const set = (id, html) => document.getElementById(id).innerHTML = html;
 
 set('glance', [
@@ -146,31 +146,35 @@ set('card-schedule', `
   <p>The group stage runs over <strong>5 matchdays</strong>, and all six teams play on every
      one of them. You will face each of the other five teams exactly once, which makes
      <strong>${t.groupRows.length} matches</strong> in total across the group.</p>
-  ${quad ? `
-  <p>Every match is exactly <strong>${gfmt.rounds} rounds</strong>: two hosted in the
-     <strong>EST</strong> region and two in <strong>GMT</strong>, so neither side has the
-     host all night. Every one of them is played, even when a team is already
-     3&ndash;0 up.</p>`
+  ${agg ? `
+  <p>A match is <strong>${gfmt.rounds} rounds</strong>: two hosted in the <strong>EST</strong>
+     region and two in <strong>GMT</strong>, so neither side has the host all night. All
+     four are played, whatever the scores.</p>
+  <p>The winner is the team with more <strong>goals added up across those four rounds</strong>
+     &mdash; not the team that won more of them. Win three rounds to one and you can still
+     lose the match, if the round you lost was lost heavily enough.</p>`
   : `
   <p>Every group match is a <strong>Best of ${gfmt.bo}</strong>: the first team to win
      ${Math.ceil(gfmt.bo / 2)} rounds takes the match, and the rest are not played.</p>`}
-  <p class="aside">In KOTAO a <strong>match</strong> is a series between two teams, and a
-     <strong>round</strong> is one game inside it. You win rounds to win the match.</p>`);
+  <p class="aside">In KOTAO a <strong>match</strong> is the whole meeting between two teams,
+     and a <strong>round</strong> is one game inside it. ${agg
+       ? 'You win rounds, but you win the match on goals.'
+       : 'You win rounds to win the match.'}</p>`);
 
 // ---------------------------------------------------------------- draws
-set('card-draws', quad ? `
-  <span class="tag">DRAWS</span>
-  <h3>A round always has a winner &mdash; a match does not</h3>
-  <p>There are no draws inside a round. If a round finishes level it goes straight to
+set('card-draws', agg ? `
+  <span class="tag">NO DRAWS</span>
+  <h3>Level on goals? Two more rounds</h3>
+  <p>A <strong>round</strong> never ends level. If it does it goes straight to
      <strong>sudden death</strong>: no time limit, first goal wins. If that ends goalless
      too you replay it, for as long as it takes. Only the decisive scoreline is recorded,
      so a round is never written down as 2&ndash;2.</p>
-  <p>A match is a different matter. ${gfmt.rounds} rounds can end
-     <strong>${gfmt.rounds / 2}&ndash;${gfmt.rounds / 2}</strong>, and in the group stage
-     that is simply a <strong>draw</strong>. It is a legal result and it is recorded as one.</p>
-  <p class="aside">In the playoffs a match has to produce a winner, so a level match goes to
-     one more sudden-death round &mdash; the <strong>decider</strong>. That extra round
-     settles it, and it is the only time a playoff match runs past ${gfmt.rounds} rounds.</p>`
+  <p>A <strong>match</strong> cannot be drawn either. If the goals are level after the four
+     rounds, you play <strong>${gfmt.extra} more rounds</strong> &mdash; one in each region &mdash;
+     add them on. Still level? Two more. A match therefore runs 4, 6, 8, 10 rounds and so
+     on, until one team is ahead on goals.</p>
+  <p class="aside">Extra rounds always come as a pair, one in each region, so the two sides
+     stay exactly even on host advantage however long a match goes on.</p>`
 : `
   <span class="tag">NO DRAWS</span>
   <h3>A round always has a winner</h3>
@@ -181,7 +185,29 @@ set('card-draws', quad ? `
      is never written down as 2&ndash;2.</p>`);
 
 // ------------------------------------------------------------ standings
-set('card-standings', `
+set('card-standings', agg ? `
+  <span class="tag">STANDINGS</span>
+  <h3>How you are ranked</h3>
+  <p>Your position comes down to <strong>matches won</strong> first. When two or more
+     teams end up level on that, these separate them, in this exact order:</p>
+  <ol class="ranked">
+    <li><strong>Goal difference</strong> &mdash; goals scored minus goals conceded</li>
+    <li><strong>Round difference</strong> &mdash; rounds won minus rounds lost</li>
+    <li><strong>Head-to-head</strong> &mdash; if you beat the team you are level with,
+        you finish above them</li>
+  </ol>
+  <p>Goals come before rounds because goals are what win a match in the first place.</p>
+  <p>Only the <em>differences</em> count, never the raw totals. A team that has won more
+     rounds may well have lost more of them too, and a team that has scored more goals may
+     have conceded more; what the table compares is what you are up by.</p>
+  <p>No match can be drawn, so two level teams always have a winner between them: their
+     head-to-head settles it.</p>
+  <p class="aside">With three or more teams level, head-to-head counts the wins each of
+     them took off the others, then is applied again to any teams still level. The only
+     tie it cannot break is a perfect circle &mdash; A beat B, B beat C, C beat A. Those
+     teams play a <strong>tiebreak match</strong>, and the playoffs wait for its result.
+     Your name never decides anything: there is no alphabetical tiebreak.</p>`
+: `
   <span class="tag">STANDINGS</span>
   <h3>How you are ranked</h3>
   <p>Your position comes down to <strong>matches won</strong> first. When two or more
@@ -194,21 +220,12 @@ set('card-standings', `
     <li><strong>Head-to-head</strong> &mdash; if you beat the team you are level with,
         you finish above them</li>
   </ol>
-  ${quad ? `
-  <p>A <strong>draw is not a win</strong>: matches won is the first column, and a drawn
-     match adds nothing to it. What puts a draw ahead of a defeat is everything below it
-     &mdash; you leave a draw with your round difference untouched, and a defeat with it
-     down.</p>
-  <p>Head-to-head can only separate two teams if one of them actually won their match.
-     Two teams who drew it stay level, and play a tiebreak match.</p>`
-  : `
   <p>Since no match can end in a draw, head-to-head always settles a tie between two
-     teams. Your name never decides anything: there is no alphabetical tiebreak.</p>`}
+     teams. Your name never decides anything: there is no alphabetical tiebreak.</p>
   <p class="aside">With three or more teams level, head-to-head counts the wins each of
-     them took off the others, then is applied again to any teams still level. Teams it
-     cannot split &mdash; a perfect circle, or two teams who drew &mdash; play a
-     <strong>tiebreak match</strong>, and the playoffs wait for its result. Your name never
-     decides anything: there is no alphabetical tiebreak.</p>`);
+     them took off the others, then is applied again to any teams still level. The only
+     tie it cannot break is a perfect circle &mdash; A beat B, B beat C, C beat A. Those
+     teams play a <strong>tiebreak match</strong>, and the playoffs wait for its result.</p>`);
 
 // ------------------------------------------------------- double elimination
 set('card-double', `
@@ -253,17 +270,14 @@ set('card-bracket', `
         <span class="pbo">${esc(formatShort(byCode[codes[0]].format))}</span>
       </div>`).join('')}
   </div>
-  <p class="aside">${quad
-    ? `Every playoff match is ${pfmt.rounds} rounds, plus one sudden-death decider round if
-       they end level. The Grand Final alone is a best of ${gffmt.games} of those matches.`
+  <p class="aside">${agg
+    ? `Nothing changes in the playoffs: every match is ${pfmt.rounds} rounds, most goals
+       wins, and two more rounds are played for as long as the goals stay level. The Grand
+       Final alone is a best of ${gffmt.games} of those matches.`
     : 'BO5 means first to three rounds; BO7 means first to four. A series stops the moment '
       + 'one team gets there.'}</p>`);
 
 // ---------------------------------------------------------- grand final
-const gfMin = gffmt.kind === 'bo' ? Math.ceil(gffmt.bo / 2)
-  : (Math.floor(gffmt.games / 2) + 1) * gffmt.rounds;
-const gfMax = gffmt.kind === 'bo' ? gffmt.bo
-  : gffmt.games * (gffmt.rounds + (gffmt.decider ? 1 : 0));
 set('card-gf', `
   <span class="tag">GRAND FINAL</span>
   <h3>No bracket reset</h3>
@@ -272,12 +286,14 @@ set('card-gf', `
      the champion &mdash; there is no second series for the Upper Bracket team, even though
      they arrived undefeated.</p>`
   : `
-  <p>The Grand Final is a <strong>best of ${gffmt.games} matches</strong> of
-     ${gffmt.rounds} rounds each: win two of them and you are champion. That is
-     <strong>${gfMin} rounds</strong> at the very least, and <strong>${gfMax}</strong> at the
-     very most if all ${gffmt.games} need their decider.</p>
-  <p>Whoever wins it is the champion &mdash; there is no second series for the Upper Bracket
-     team, even though they arrived undefeated.</p>`}
+  <p>The Grand Final is a <strong>best of ${gffmt.games} matches</strong>. Each one is played
+     exactly like any other &mdash; ${gffmt.rounds} rounds, most goals wins, extra rounds
+     while level &mdash; and each one won is worth <strong>one point</strong>. The first team
+     to <strong>two points</strong> is the champion, so it ends 2&ndash;0 or 2&ndash;1.</p>
+  <p>That is at least <strong>${(Math.floor(gffmt.games / 2) + 1) * gffmt.rounds}
+     rounds</strong>, and more whenever a match needs extra ones. Whoever wins it is the
+     champion &mdash; there is no second series for the Upper Bracket team, even though
+     they arrived undefeated.</p>`}
   <p class="aside">This is a deliberate choice. A bracket reset would mean playing the whole
      Grand Final a second time, for two teams who have already played the longest road in the
      tournament. One final, one champion.</p>`);

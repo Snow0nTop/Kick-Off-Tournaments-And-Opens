@@ -124,7 +124,7 @@ function statusPillHtml(status) {
   let cls = 'pending';
   if (status === 'Finished') cls = 'finished';
   else if (/to play$/.test(status)) cls = 'next';
-  else if (status === 'Draw') cls = 'draw';
+  else if (/^Still level/.test(status)) cls = 'level';
   else if (status === 'All rounds played - no winner') cls = 'error';
   return `<span class="status-pill ${cls}">${esc(status)}</span>`;
 }
@@ -133,10 +133,15 @@ function pillRank(n) {
   return `<span class="pos-pill p${n}">${n}</span>`;
 }
 
-// True when this tournament's group matches can end level, which is what
-// decides whether the standings carry a draws column.
-function groupCanDraw(t) {
-  return t.groupRows.some(r => r.stats.format && r.stats.format.kind !== 'bo');
+// A tournament's own match format, taken from its first group match. It is
+// what decides which columns the standings carry and how a score reads.
+function fmtOf(t) {
+  return (t.groupRows[0] && t.groupRows[0].stats.format) || { kind: 'bo', bo: 3 };
+}
+
+// In the aggregate format goals win matches, so the standings lead with them.
+function isAgg(t) {
+  return fmtOf(t).kind === 'agg';
 }
 
 // -------------------------------------------------------------------- hub
@@ -163,7 +168,7 @@ function renderTournamentCards(container, raw) {
       </div>
       <div class="tcard-meta">
         <span>${esc(t.when || '')}</span>
-        <span>${esc(formatLabel(sample))} per match</span>
+        <span>${esc(formatLabel(sample))}</span>
         <span>${t.teams.length} teams</span>
         <span>Matchdays ${played}/5</span>
       </div>
@@ -184,7 +189,7 @@ function renderStandingsTable(container, t, opts) {
   // With nothing played the ranking is just the alphabet in disguise, so it is
   // shown as an unordered participant list rather than a fake standing.
   const ranked = t.anyGroupPlayed;
-  const draws = groupCanDraw(t);
+  const agg = isAgg(t);
   const pending = new Set([].concat(...t.unresolvedTies.map(g => g.teams)));
   const rows = t.standings.map(team => {
     const d = t.groupStats[team];
@@ -192,32 +197,34 @@ function renderStandingsTable(container, t, opts) {
     // decides which of them is printed first, never who is placed higher
     const n = t.rank[team];
     const flag = pending.has(team) ? '<span class="tie-flag">Tiebreak match pending</span>' : '';
-    const record = draws ? `${d.mw}-${d.md}-${d.ml}` : `${d.mw}-${d.ml}`;
+    const goals = `<td class="num">${d.gf}-${d.ga}</td>
+      <td class="num">${d.gd >= 0 ? '+' : ''}${d.gd}</td>`;
+    const rounds = `<td class="num">${d.rw}-${d.rl}</td>
+      <td class="num">${d.rd >= 0 ? '+' : ''}${d.rd}</td>`;
     return `<tr${pending.has(team) ? ' class="tied"' : ''}>
       <td class="rank-cell ${ranked && n <= 4 ? 'top4' : ''}">${
         ranked ? pillRank(n) : '<span class="pos-pill tbd">&ndash;</span>'}</td>
       <td class="team"><div class="team-cell"><span class="team-id">${teamHtml(team)}</span>${flag}</div></td>
       <td class="num">${d.mp}</td>
-      <td class="num">${record}</td>
-      ${opts.compact ? '' : `
-      <td class="num">${d.rw}-${d.rl}</td>
-      <td class="num">${d.rd >= 0 ? '+' : ''}${d.rd}</td>
-      <td class="num">${d.gf}-${d.ga}</td>
-      <td class="num">${d.gd >= 0 ? '+' : ''}${d.gd}</td>`}
+      <td class="num">${d.mw}-${d.ml}</td>
+      ${opts.compact ? '' : (agg ? goals + rounds : rounds + goals)}
     </tr>`;
   }).join('');
-  const record = draws ? 'W-D-L' : 'W-L';
+  // the columns run in ranking order, so the table reads like the tiebreak list
+  const gcols = '<th class="num">Goals (F-A)</th><th class="num">Goal +/-</th>';
+  const rcols = '<th class="num">Rounds (W-L)</th><th class="num">Round +/-</th>';
   const head = opts.compact
-    ? `<tr><th>#</th><th>Team</th><th class="num">MP</th><th class="num">${record}</th></tr>`
-    : `<tr><th>#</th><th>Team</th><th class="num">MP</th><th class="num">Matches (${record})</th>
-        <th class="num">Rounds (W-L)</th><th class="num">Round +/-</th>
-        <th class="num">Goals (F-A)</th><th class="num">Goal +/-</th></tr>`;
+    ? '<tr><th>#</th><th>Team</th><th class="num">MP</th><th class="num">W-L</th></tr>'
+    : `<tr><th>#</th><th>Team</th><th class="num">MP</th><th class="num">Matches (W-L)</th>
+        ${agg ? gcols + rcols : rcols + gcols}</tr>`;
   container.innerHTML = `<div class="table-scroll"><table><thead>${head}</thead><tbody>${rows}</tbody></table></div>`;
   if (!opts.compact) {
     const legend = el('div', 'legend', ranked
-      ? 'Tiebreak order: matches won &gt; round difference &gt; rounds won &gt; goal difference &gt; goals scored &gt; head-to-head. '
+      ? (agg
+          ? 'Tiebreak order: matches won &gt; goal difference &gt; round difference &gt; head-to-head. '
+            + 'Goals are what win a match, so they rank above rounds.'
+          : 'Tiebreak order: matches won &gt; round difference &gt; rounds won &gt; goal difference &gt; goals scored &gt; head-to-head. ')
         + 'Teams level on all of these share a rank.'
-        + (draws ? ' A drawn match counts as a win for nobody.' : '')
       : 'No matches played yet &mdash; teams are listed alphabetically, not ranked.');
     container.appendChild(legend);
   }
@@ -240,6 +247,7 @@ function tieNoticeEl(t) {
 // -------------------------------------------------------------- head-to-head
 function renderHeadToHead(container, t) {
   const alpha = t.teams.slice().sort(byName);
+  const agg = isAgg(t);
   const seriesOf = {};
   t.groupRows.forEach(r => {
     seriesOf[r.teamA + '|' + r.teamB] = { s: r.stats, flip: false };
@@ -255,10 +263,16 @@ function renderHeadToHead(container, t) {
       if (rowTeam === colTeam) return '<td class="diag">/</td>';
       const e = seriesOf[rowTeam + '|' + colTeam];
       if (!e || e.s.played === 0) return '<td></td>';
-      const a = e.flip ? e.s.rb : e.s.ra;
-      const b = e.flip ? e.s.ra : e.s.rb;
+      const ra = e.flip ? e.s.rb : e.s.ra, rb = e.flip ? e.s.ra : e.s.rb;
+      const ga = e.flip ? e.s.gb : e.s.ga, gb = e.flip ? e.s.ga : e.s.gb;
+      // whichever number decides the match is the one that colours the cell
+      const [a, b] = agg ? [ga, gb] : [ra, rb];
       const cls = a > b ? 'win' : (a < b ? 'loss' : '');
-      return `<td class="${cls}">${a}-${b}</td>`;
+      // rounds on top, goals underneath in a smaller size - goals win the match
+      return agg
+        ? `<td class="${cls}"><span class="h2h-r">${ra}-${rb}</span>` +
+          `<span class="h2h-g">${ga}-${gb}</span></td>`
+        : `<td class="${cls}">${ra}-${rb}</td>`;
     }).join('');
     return `<tr><td class="rowlabel"><span class="team-id">${teamHtml(rowTeam)}</span></td>${cells}</tr>`;
   }).join('');
@@ -293,13 +307,24 @@ function roundsStripHtml(s, rounds) {
   return parts.join('<span class="gdiv"></span>');
 }
 
+// The second line under a score, naming the numbers the headline is not
+// showing. An aggregate match is won on goals, so its rounds go here; a
+// best-of-matches series shows the goals behind its match wins.
+function subScoreHtml(s) {
+  if (!s.played || s.format.kind !== 'agg') return '';
+  return s.multi
+    ? `<div class="subscore">Goals ${s.ga}&ndash;${s.gb}</div>`
+    : `<div class="subscore">Rounds ${s.ra}&ndash;${s.rb}</div>`;
+}
+
 function matchRow(teamA, teamB, s, rounds) {
   const row = el('div', 'match-row');
   const aWin = s.decided && s.winnerSide === 'a';
   const bWin = s.decided && s.winnerSide === 'b';
   row.appendChild(el('div', 'side', teamHtml(teamA, { cls: 'md', nameCls: 'win-name' + (aWin ? ' winner' : '') })));
   const mid = el('div', null,
-    `<div class="score${s.drawn ? ' drawn' : ''}">${s.played ? s.wa : '-'}<span class="sep">:</span>${s.played ? s.wb : '-'}</div>
+    `<div class="score">${s.played ? s.wa : '-'}<span class="sep">:</span>${s.played ? s.wb : '-'}</div>
+     ${subScoreHtml(s)}
      <div class="rounds-strip">${roundsStripHtml(s, rounds)}</div>`);
   row.appendChild(mid);
   row.appendChild(el('div', 'side right', teamHtml(teamB, { cls: 'md', nameCls: 'win-name' + (bWin ? ' winner' : '') })));
@@ -315,7 +340,8 @@ function bracketMatchHtml(p) {
     <div class="brow ${isWinner ? 'winner' : ''} ${!name ? 'tbd' : ''}">
       ${logoHtml(name, { cls: 'sm' })}
       <span class="nm"${!name && origin ? ` title="${esc(origin)}"` : ''}>${esc(name || 'TBD')}</span>
-      <span class="sc">${name && p.stats.played ? score : ''}</span>
+      <span class="sc" title="${esc(scoreUnit(p.format))} won">${
+        name && p.stats.played ? score : ''}</span>
     </div>`;
   return `<div class="bmatch">
     ${row(p.teamA, p.stats.wa, aWin, p._fromA)}

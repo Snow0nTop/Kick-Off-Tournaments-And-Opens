@@ -14,7 +14,8 @@ group stage, and double-elimination playoffs.
 - **Format & Rules** — how that tournament works, tiebreakers included
 
 Each tournament carries its own match format, and its Format & Rules page is
-written from the format it actually uses.
+written from the format it actually uses — down to the tiebreak order, which
+differs between them.
 
 ## How it works
 
