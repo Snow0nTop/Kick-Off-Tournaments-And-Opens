@@ -12,18 +12,23 @@
 </head>
 <body>
 
+<a class="skip-link" href="#main">Skip to main content</a>
+
 <header class="topbar"><div class="wrap" id="nav"></div></header>
 
-<div class="hero">
+<section class="hero" aria-labelledby="page-title">
   <div class="wrap">
-    <h1>Format &amp; Rules</h1>
+    <h1 id="page-title">Format &amp; Rules</h1>
     <div class="tagline">Everything a player needs to know, from the first kick-off to the trophy.</div>
   </div>
-</div>
+</section>
 
-<main class="wrap">
+<main class="wrap" id="main" tabindex="-1">
 
-  <section><div class="glance" id="glance"></div></section>
+  <section aria-labelledby="glance-h">
+    <h2 id="glance-h" class="visually-hidden">The tournament in numbers</h2>
+    <div class="glance" id="glance"></div>
+  </section>
 
   <section>
     <h2 class="rule-group">The Group Stage</h2>

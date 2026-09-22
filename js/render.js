@@ -34,15 +34,19 @@ function renderNav(active, t) {
     ['playoffs.html', 'playoffs', 'Playoffs'],
     ['rules.html', 'rules', 'Format &amp; Rules'],
   ];
+  // aria-current tells a screen reader which page it is on; the highlight
+  // alone would only say it to someone who can see the colour.
+  const link = (p, k, label) =>
+    `<a href="${href(p, id)}"${k === active ? ' class="active" aria-current="page"' : ''}>`
+    + `${label}</a>`;
   host.innerHTML = `
     <a class="brand" href="index.html">
       <img class="tlogo brand-logo" src="logos/kotao.webp" alt=""> KOTAO</a>
-    ${t ? `<span class="nav-sep">/</span><span class="nav-tourney">${esc(t.name)}</span>` : ''}
-    <nav class="navlinks">
-      ${t ? links.map(([p, k, label]) =>
-        `<a href="${href(p, id)}" class="${k === active ? 'active' : ''}">${label}</a>`).join('')
-        : ''}
-      <a href="index.html" class="${active === 'hub' ? 'active' : ''}">All tournaments</a>
+    ${t ? `<span class="nav-sep" aria-hidden="true">/</span>`
+        + `<span class="nav-tourney">${esc(t.name)}</span>` : ''}
+    <nav class="navlinks" aria-label="${t ? esc(t.name) : 'Site'}">
+      ${t ? links.map(([p, k, label]) => link(p, k, label)).join('') : ''}
+      ${link('index.html', 'hub', 'All tournaments')}
     </nav>`;
 }
 
@@ -63,6 +67,28 @@ function teamSlug(name) {
   return String(name || '')
     .normalize('NFD').replace(/[̀-ͯ]/g, '')  // "Éclair" -> "Eclair"
     .toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+// Short codes for the head-to-head column headers, which have no room for a
+// full name. Built to be unique inside one tournament, because a crest plus a
+// hover tooltip would leave a phone user with nothing to read.
+function teamCodes(teams) {
+  const base = n => {
+    const words = String(n || '').replace(/\bFC\b/gi, '').trim().split(/\s+/);
+    return (words.length > 1 ? words.map(w => w[0]).join('') : words[0] || '?')
+      .toUpperCase().slice(0, 3);
+  };
+  const codes = {};
+  teams.forEach(n => codes[n] = base(n));
+  const seen = {};
+  teams.forEach(n => seen[codes[n]] = (seen[codes[n]] || 0) + 1);
+  // a clash is unlikely, but two codes the same would be worse than a long one
+  teams.forEach(n => {
+    if (seen[codes[n]] > 1) {
+      codes[n] = String(n).replace(/[^A-Za-z0-9]/g, '').toUpperCase().slice(0, 4);
+    }
+  });
+  return codes;
 }
 
 function monogram(name) {
@@ -197,27 +223,35 @@ function renderStandingsTable(container, t, opts) {
     // decides which of them is printed first, never who is placed higher
     const n = t.rank[team];
     const flag = pending.has(team) ? '<span class="tie-flag">Tiebreak match pending</span>' : '';
+    const pos = ranked ? pillRank(n)
+      : '<span class="pos-pill tbd" aria-hidden="true">&ndash;</span>'
+        + '<span class="visually-hidden">Not ranked yet</span>';
     const goals = `<td class="num">${d.gf}-${d.ga}</td>
       <td class="num">${d.gd >= 0 ? '+' : ''}${d.gd}</td>`;
     const rounds = `<td class="num">${d.rw}-${d.rl}</td>
       <td class="num">${d.rd >= 0 ? '+' : ''}${d.rd}</td>`;
     return `<tr${pending.has(team) ? ' class="tied"' : ''}>
-      <td class="rank-cell ${ranked && n <= 4 ? 'top4' : ''}">${
-        ranked ? pillRank(n) : '<span class="pos-pill tbd">&ndash;</span>'}</td>
-      <td class="team"><div class="team-cell"><span class="team-id">${teamHtml(team)}</span>${flag}</div></td>
+      <td class="rank-cell">${pos}</td>
+      <th scope="row" class="team"><div class="team-cell"><span class="team-id">${teamHtml(team)}</span>${flag}</div></th>
       <td class="num">${d.mp}</td>
       <td class="num">${d.mw}-${d.ml}</td>
       ${opts.compact ? '' : (agg ? goals + rounds : rounds + goals)}
     </tr>`;
   }).join('');
   // the columns run in ranking order, so the table reads like the tiebreak list
-  const gcols = '<th class="num">Goals (F-A)</th><th class="num">Goal +/-</th>';
-  const rcols = '<th class="num">Rounds (W-L)</th><th class="num">Round +/-</th>';
-  const head = opts.compact
-    ? '<tr><th>#</th><th>Team</th><th class="num">MP</th><th class="num">W-L</th></tr>'
-    : `<tr><th>#</th><th>Team</th><th class="num">MP</th><th class="num">Matches (W-L)</th>
-        ${agg ? gcols + rcols : rcols + gcols}</tr>`;
-  container.innerHTML = `<div class="table-scroll"><table><thead>${head}</thead><tbody>${rows}</tbody></table></div>`;
+  const th = (label, cls) => `<th scope="col"${cls ? ` class="${cls}"` : ''}>${label}</th>`;
+  const gcols = th('Goals (F-A)', 'num') + th('Goal +/-', 'num');
+  const rcols = th('Rounds (W-L)', 'num') + th('Round +/-', 'num');
+  const lead = th('<span aria-hidden="true">#</span>'
+                  + '<span class="visually-hidden">Position</span>')
+             + th('Team')
+             + th('<abbr title="Matches played">MP</abbr>', 'num');
+  const head = '<tr>' + lead + (opts.compact
+    ? th('<abbr title="Won-Lost">W-L</abbr>', 'num')
+    : th('Matches (W-L)', 'num') + (agg ? gcols + rcols : rcols + gcols)) + '</tr>';
+  container.innerHTML = `<div class="table-scroll"><table>`
+    + `<caption class="visually-hidden">Group stage standings</caption>`
+    + `<thead>${head}</thead><tbody>${rows}</tbody></table></div>`;
   if (!opts.compact) {
     const legend = el('div', 'legend', ranked
       ? (agg
@@ -248,6 +282,7 @@ function tieNoticeEl(t) {
 function renderHeadToHead(container, t) {
   const alpha = t.teams.slice().sort(byName);
   const agg = isAgg(t);
+  const codes = teamCodes(alpha);
   const seriesOf = {};
   t.groupRows.forEach(r => {
     seriesOf[r.teamA + '|' + r.teamB] = { s: r.stats, flip: false };
@@ -255,8 +290,12 @@ function renderHeadToHead(container, t) {
   });
   // Column headers are the one genuinely cramped spot - six of them across a
   // narrow grid - so they carry the crest alone, with the name as a tooltip.
-  let head = '<tr><th></th>' +
-    alpha.map(a => `<th class="h2h-col">${logoHtml(a, { cls: 'md', named: true })}</th>`).join('') +
+  // The header carries the crest, a short code and the full name for screen
+  // readers - never a tooltip alone, which a phone cannot show (WCAG 1.4.1).
+  let head = '<tr><td></td>' +
+    alpha.map(a => `<th scope="col" class="h2h-col">${logoHtml(a, { cls: 'md' })}`
+      + `<span class="h2h-abbr" aria-hidden="true">${esc(codes[a])}</span>`
+      + `<span class="visually-hidden">${esc(a)}</span></th>`).join('') +
     '</tr>';
   let rows = alpha.map(rowTeam => {
     const cells = alpha.map(colTeam => {
@@ -268,15 +307,27 @@ function renderHeadToHead(container, t) {
       // whichever number decides the match is the one that colours the cell
       const [a, b] = agg ? [ga, gb] : [ra, rb];
       const cls = a > b ? 'win' : (a < b ? 'loss' : '');
+      // The colour is a shortcut, not the only signal: the scores are printed
+      // row-team-first, so 18-17 says "won" to anyone reading the numbers, and
+      // a screen reader is told the result outright.
+      const res = cls
+        ? `<span class="visually-hidden">${cls === 'win' ? 'Won' : 'Lost'}, </span>`
+        : '';
       // rounds on top, goals underneath in a smaller size - goals win the match
       return agg
-        ? `<td class="${cls}"><span class="h2h-r">${ra}-${rb}</span>` +
-          `<span class="h2h-g">${ga}-${gb}</span></td>`
-        : `<td class="${cls}">${ra}-${rb}</td>`;
+        ? `<td class="${cls}">${res}<span class="h2h-r">${ra}-${rb}` +
+          `<span class="visually-hidden"> rounds</span></span>` +
+          `<span class="h2h-g">${ga}-${gb}` +
+          `<span class="visually-hidden"> goals</span></span></td>`
+        : `<td class="${cls}">${res}${ra}-${rb}</td>`;
     }).join('');
-    return `<tr><td class="rowlabel"><span class="team-id">${teamHtml(rowTeam)}</span></td>${cells}</tr>`;
+    return `<tr><th scope="row" class="rowlabel">`
+      + `<span class="team-id">${teamHtml(rowTeam)}</span></th>${cells}</tr>`;
   }).join('');
-  container.innerHTML = `<div class="table-scroll"><table class="h2h"><thead>${head}</thead><tbody>${rows}</tbody></table></div>`;
+  container.innerHTML = `<div class="table-scroll"><table class="h2h">`
+    + `<caption class="visually-hidden">Head to head: each row team's result `
+    + `against each column team</caption>`
+    + `<thead>${head}</thead><tbody>${rows}</tbody></table></div>`;
 }
 
 // -------------------------------------------------------------------- matchdays
@@ -317,17 +368,25 @@ function subScoreHtml(s) {
     : `<div class="subscore">Rounds ${s.ra}&ndash;${s.rb}</div>`;
 }
 
+// The tick after a winner's name is drawn in CSS; this is the part a screen
+// reader hears, because neither a colour nor a ::after glyph is dependable.
+function wonTag(isWinner) {
+  return isWinner ? '<span class="visually-hidden"> (winner)</span>' : '';
+}
+
 function matchRow(teamA, teamB, s, rounds) {
   const row = el('div', 'match-row');
   const aWin = s.decided && s.winnerSide === 'a';
   const bWin = s.decided && s.winnerSide === 'b';
-  row.appendChild(el('div', 'side', teamHtml(teamA, { cls: 'md', nameCls: 'win-name' + (aWin ? ' winner' : '') })));
+  row.appendChild(el('div', 'side',
+    teamHtml(teamA, { cls: 'md', nameCls: 'win-name' + (aWin ? ' winner' : '') }) + wonTag(aWin)));
   const mid = el('div', null,
     `<div class="score">${s.played ? s.wa : '-'}<span class="sep">:</span>${s.played ? s.wb : '-'}</div>
      ${subScoreHtml(s)}
      <div class="rounds-strip">${roundsStripHtml(s, rounds)}</div>`);
   row.appendChild(mid);
-  row.appendChild(el('div', 'side right', teamHtml(teamB, { cls: 'md', nameCls: 'win-name' + (bWin ? ' winner' : '') })));
+  row.appendChild(el('div', 'side right',
+    teamHtml(teamB, { cls: 'md', nameCls: 'win-name' + (bWin ? ' winner' : '') }) + wonTag(bWin)));
   row.appendChild(el('div', 'status', statusPillHtml(s.status)));
   return row;
 }
@@ -336,12 +395,15 @@ function matchRow(teamA, teamB, s, rounds) {
 function bracketMatchHtml(p) {
   const aWin = p.stats.decided && p.stats.winnerSide === 'a';
   const bWin = p.stats.decided && p.stats.winnerSide === 'b';
+  const unit = scoreUnit(p.format);
   const row = (name, score, isWinner, origin) => `
     <div class="brow ${isWinner ? 'winner' : ''} ${!name ? 'tbd' : ''}">
       ${logoHtml(name, { cls: 'sm' })}
-      <span class="nm"${!name && origin ? ` title="${esc(origin)}"` : ''}>${esc(name || 'TBD')}</span>
-      <span class="sc" title="${esc(scoreUnit(p.format))} won">${
-        name && p.stats.played ? score : ''}</span>
+      <span class="nm"${!name && origin ? ` title="${esc(origin)}"` : ''}>${esc(name || 'TBD')}${
+        !name && origin ? `<span class="visually-hidden">: ${esc(origin)}</span>` : ''}${
+        wonTag(isWinner)}</span>
+      <span class="sc" title="${esc(unit)} won">${name && p.stats.played ? score : ''}${
+        name && p.stats.played ? `<span class="visually-hidden"> ${esc(unit)}</span>` : ''}</span>
     </div>`;
   return `<div class="bmatch">
     ${row(p.teamA, p.stats.wa, aWin, p._fromA)}

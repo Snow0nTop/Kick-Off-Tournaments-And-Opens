@@ -12,19 +12,21 @@
 </head>
 <body>
 
+<a class="skip-link" href="#main">Skip to main content</a>
+
 <header class="topbar"><div class="wrap" id="nav"></div></header>
 
-<div class="hero">
+<section class="hero" aria-labelledby="page-title">
   <div class="wrap hero-id">
     <img class="tlogo hero-logo" src="logos/kotao-lg.webp" alt="KOTAO">
     <div class="hero-text">
-      <h1>Kick-Off Tournaments And Opens</h1>
+      <h1 id="page-title">Kick-Off Tournaments And Opens</h1>
       <div class="tagline">Roblox football, played properly. Pick a tournament to follow it live.</div>
     </div>
   </div>
-</div>
+</section>
 
-<main class="wrap">
+<main class="wrap" id="main" tabindex="-1">
 
   <section>
     <div class="section-head"><h2>Tournaments</h2>
@@ -32,7 +34,8 @@
     <div class="tcards" id="tournaments"></div>
   </section>
 
-  <section>
+  <section aria-labelledby="about-h">
+    <h2 id="about-h" class="visually-hidden">About this site</h2>
     <div class="panel about">
       <p>Every page here is generated straight from the admins' official tracker, so the
          standings, the tiebreakers and the bracket are recalculated from the raw round

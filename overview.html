@@ -12,9 +12,11 @@
 </head>
 <body>
 
+<a class="skip-link" href="#main">Skip to main content</a>
+
 <header class="topbar"><div class="wrap" id="nav"></div></header>
 
-<div class="hero">
+<section class="hero" aria-labelledby="hero-title">
   <div class="wrap hero-id">
     <img class="tlogo hero-logo" src="logos/kotao-lg.webp" alt="KOTAO">
     <div class="hero-text">
@@ -23,11 +25,12 @@
       <div class="badges" id="hero-badges"></div>
     </div>
   </div>
-</div>
+</section>
 
-<main class="wrap">
+<main class="wrap" id="main" tabindex="-1">
 
-  <section>
+  <section aria-labelledby="glance-h">
+    <h2 id="glance-h" class="visually-hidden">At a glance</h2>
     <div class="stat-grid" id="stat-grid"></div>
   </section>
 

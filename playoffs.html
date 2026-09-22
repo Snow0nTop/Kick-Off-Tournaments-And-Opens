@@ -12,20 +12,25 @@
 </head>
 <body>
 
+<a class="skip-link" href="#main">Skip to main content</a>
+
 <header class="topbar"><div class="wrap" id="nav"></div></header>
 
-<div class="hero">
+<section class="hero" aria-labelledby="page-title">
   <div class="wrap">
-    <h1>Playoffs</h1>
+    <h1 id="page-title">Playoffs</h1>
     <div class="tagline">Double elimination. 1st–4th enter the Upper Bracket, 5th–6th the Lower Bracket.</div>
   </div>
-</div>
+</section>
 
-<main class="wrap">
+<main class="wrap" id="main" tabindex="-1">
 
-  <section id="locked-note" style="display:none">
+  <section id="locked-note" style="display:none" aria-labelledby="locked-h">
+    <h2 id="locked-h" class="visually-hidden">Bracket status</h2>
     <div class="panel" style="padding:20px;color:var(--text-mute)">
-      The bracket fills in once every group stage match is finished. Until then every slot reads TBD &mdash; hover one to see where its team will come from.
+      The bracket fills in once every group stage match is finished. Until then every
+      slot reads TBD. The <strong>Match Report</strong> below names every phase and
+      says where each of its two teams will come from.
     </div>
   </section>
 
@@ -59,9 +64,9 @@ document.getElementById('link-rules').href = href('rules.html', t.id);
 if (!t.allDecided) {
   document.getElementById('locked-note').style.display = '';
 } else if (!t.seedingSettled) {
+  // swap the panel for the tie notice, but keep the section's own heading
   const host = document.getElementById('locked-note');
-  host.innerHTML = '';
-  host.appendChild(tieNoticeEl(t));
+  host.querySelector('.panel').replaceWith(tieNoticeEl(t));
   host.style.display = '';
 }
 renderBracket(document.getElementById('bracket'), t);
