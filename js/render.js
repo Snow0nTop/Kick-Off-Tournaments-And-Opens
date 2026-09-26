@@ -60,7 +60,7 @@ function renderNav(active, t) {
 // so renaming a team in a workbook never breaks a layout - it just loses the
 // crest until someone drops in a file with the matching name.
 const LOGO_SLUGS = new Set([
-  'blizzardsfc', 'bmfc', 'califc', 'cerruanosfc', 'crownfc', 'kotao', 'sandmonkeyfc',
+  'blizzardsfc', 'bmfc', 'califc', 'cerruanosfc', 'glassfc', 'kotao', 'sandmonkeyfc',
 ]);
 
 function teamSlug(name) {
@@ -154,6 +154,7 @@ function statusPillHtml(status) {
   let cls = 'pending';
   if (status === 'Finished') cls = 'finished';
   else if (status === 'Drawn') cls = 'drawn';
+  else if (status === 'Forfeit') cls = 'forfeit';
   else if (/to play$/.test(status)) cls = 'next';
   else if (/^Still level/.test(status)) cls = 'level';
   else if (status === 'All rounds played - no winner') cls = 'error';

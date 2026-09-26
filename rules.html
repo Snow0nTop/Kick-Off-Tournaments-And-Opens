@@ -162,7 +162,12 @@ set('card-schedule', `
      &mdash; not the team that won more of them. Win three rounds to one and you can still
      lose the match, if the round you lost was lost heavily enough.</p>
   ${draws ? `<p>Level on goals after the four? The match is a <strong>draw</strong>, and both
-     teams take a point.</p>` : ''}`
+     teams take a point.</p>` : ''}
+  ${agg ? `<p>A team that cannot play a group match &mdash; not enough players, or a
+     disqualification &mdash; loses it by <strong>forfeit</strong>. The other team is awarded
+     the four rounds <strong>2&ndash;0, 2&ndash;0, 3&ndash;0, 3&ndash;0</strong>: a
+     <strong>4&ndash;0</strong> win on rounds and <strong>10&ndash;0</strong> on goals,
+     which counts in the table exactly like a match that was played.</p>` : ''}`
   : `
   <p>Every group match is a <strong>Best of ${gfmt.bo}</strong>: the first team to win
      ${Math.ceil(gfmt.bo / 2)} rounds takes the match, and the rest are not played.</p>`}

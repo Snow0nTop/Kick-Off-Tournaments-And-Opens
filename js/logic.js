@@ -62,6 +62,20 @@ const CHAINS = {
 // grid. Each empty slot therefore gets a marker name, and the site prints TBD
 // wherever one turns up. The marker is deliberately printable: if it ever
 // escaped to the screen it would be obvious rather than invisible.
+// A forfeit: a team that cannot play a group match - not enough players, a
+// disqualification - loses it by a fixed scoreline, the four rounds below from
+// the point of view of the side that DID turn up. That is 4-0 on rounds and
+// 10-0 on goals, and it counts in the table like any other result. The
+// workbook records only who forfeited; the scores are always these.
+const FORFEIT_ROUNDS = ['2-0', '2-0', '3-0', '3-0'];
+
+// The four rounds of a forfeited match, oriented for the report: `side` is the
+// team that forfeited, so the other one takes every round.
+function forfeitRounds(side) {
+  return side === 'b' ? FORFEIT_ROUNDS.slice()
+                      : FORFEIT_ROUNDS.map(r => r.split('-').reverse().join('-'));
+}
+
 const BLANK_PREFIX = '@@slot-';
 const BLANK = i => BLANK_PREFIX + (i + 1);
 
@@ -223,9 +237,16 @@ function computeGroupStage(teams, groupMatches) {
     day.forEach(([slotA, slotB]) => {
       const m = groupMatches[idx++];
       const teamA = teams[(m.a || slotA) - 1], teamB = teams[(m.b || slotB) - 1];
-      const s = seriesStats(m.rounds, m.format);
+      // a declared forfeit replaces whatever was typed with the fixed scoreline
+      const forfeit = m.forfeit === 'a' || m.forfeit === 'b' ? m.forfeit : null;
+      const rounds = forfeit ? forfeitRounds(forfeit) : m.rounds;
+      const s = seriesStats(rounds, m.format);
+      if (forfeit) {
+        s.forfeit = forfeit;
+        s.status = 'Forfeit';
+      }
       rows.push({ matchday: dayIdx + 1, teamA, teamB, format: m.format,
-                  rounds: m.rounds, stats: s });
+                  rounds, forfeit, stats: s });
       if (s.played > 0) {
         const da = stats[teamA], db = stats[teamB];
         da.mp++; db.mp++;
@@ -387,5 +408,5 @@ if (typeof module !== 'undefined') {
   module.exports = { byName, isBlankTeam, parseRound, seriesStats, computeGroupStage, rankTeams,
                      tiedGroups, computePlayoffs, buildTournament, pickTournament,
                      formatLabel, formatShort, scoreUnit, slotsPerGame, gameCount,
-                     SCHEDULE, PLAYOFF_PHASES, CHAINS };
+                     SCHEDULE, PLAYOFF_PHASES, CHAINS, FORFEIT_ROUNDS, forfeitRounds };
 }

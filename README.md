@@ -21,8 +21,8 @@ differs between them.
 
 Results are recorded by the tournament admins and published here
 automatically. Standings, tiebreakers and the bracket are recalculated from the
-raw round scores on every page load, so the site always follows the official
-rules.
+raw round scores, and any forfeits, on every page load, so the site always
+follows the official rules.
 
 The site is plain HTML, CSS and JavaScript, hosted for free on GitHub Pages —
 no build step, no backend, no login.
