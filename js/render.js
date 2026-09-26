@@ -126,16 +126,70 @@ function teamHtml(name, opts) {
 // Stamps the footer with when the data was last published. For spectators it
 // signals how fresh the page is; for an admin it is the confirmation that a
 // publish actually landed - a stamp that did not move means it did not.
+// ------------------------------------------------------------- dates & times
+// Every time on the site is shown in the visitor's own time zone - a player in
+// Paris and one in New York each read their own clock - but always in English,
+// whatever language the browser speaks. Only the 12- or 24-hour clock follows
+// the visitor's habits.
+const HOUR12 = (() => {
+  try {
+    const hc = new Intl.DateTimeFormat(undefined, { hour: 'numeric' })
+      .resolvedOptions().hourCycle;
+    return hc === 'h11' || hc === 'h12';
+  } catch (e) {
+    return false;
+  }
+})();
+
+function fmtDate(d, opts) {
+  return new Intl.DateTimeFormat('en-GB', opts).format(d);
+}
+
+function fmtTime(d, timeZone) {
+  return new Intl.DateTimeFormat(HOUR12 ? 'en-US' : 'en-GB',
+    // a 24-hour clock is written 00:00 to 23:59; a 12-hour one, 9:00 PM
+    { hour: HOUR12 ? 'numeric' : '2-digit', minute: '2-digit', hour12: HOUR12,
+      timeZone }).format(d);
+}
+
+// "CEST", "BST", "GMT-4": what the visitor's own clock is called
+function zoneName(d) {
+  const part = new Intl.DateTimeFormat('en-GB', { timeZoneName: 'short' })
+    .formatToParts(d).find(p => p.type === 'timeZoneName');
+  return part ? part.value : '';
+}
+
+// "Sat 26 Sep · 23:00 CEST (21:00 GMT)" - the kick-off on the visitor's clock,
+// with GMT alongside, because that is the time the admins announce, unless the
+// visitor is on GMT already.
+function kickoffHtml(iso) {
+  const d = new Date(iso);
+  if (!iso || isNaN(d)) return '';
+  const local = fmtDate(d, { weekday: 'short', day: 'numeric', month: 'short' })
+    + ' \u00b7 ' + fmtTime(d) + ' ' + zoneName(d);
+  const gmt = d.getTimezoneOffset() === 0 ? ''
+    : ` <span class="kickoff-gmt">(${esc(fmtTime(d, 'UTC'))} GMT)</span>`;
+  return `<time class="kickoff" datetime="${esc(iso)}">${esc(local)}${gmt}</time>`;
+}
+
+// "From 26 Sep 2026", on the visitor's calendar: in Tokyo the first 21:00 GMT
+// match already falls on the next day, and that is the date they should see.
+function startHtml(iso) {
+  const d = new Date(iso);
+  if (!iso || isNaN(d)) return '';
+  return `<time datetime="${esc(iso)}">From `
+    + esc(fmtDate(d, { day: 'numeric', month: 'short', year: 'numeric' })) + '</time>';
+}
+
 function renderUpdatedStamp(iso) {
   const host = document.getElementById('updated-stamp');
   if (!host) return;
   if (!iso) { host.textContent = ''; return; }
   const d = new Date(iso);
   if (isNaN(d)) { host.textContent = ''; return; }
-  const abs = d.toLocaleString(undefined, {
-    year: 'numeric', month: 'short', day: 'numeric',
-    hour: '2-digit', minute: '2-digit',
-  });
+  // English words, the visitor's time zone - see fmtDate()
+  const abs = fmtDate(d, { day: 'numeric', month: 'short', year: 'numeric' })
+    + ', ' + fmtTime(d);
   const mins = Math.round((Date.now() - d.getTime()) / 60000);
   let rel;
   if (mins < 1) rel = 'just now';
@@ -199,7 +253,7 @@ function renderTournamentCards(container, raw) {
         }${PHASE_LABEL[t.phase]}</span>
       </div>
       <div class="tcard-meta">
-        <span>${esc(t.when || '')}</span>
+        <span>${t.firstKickoff ? startHtml(t.firstKickoff) : esc(t.when || '')}</span>
         <span>${esc(formatLabel(sample))}</span>
         <span>${t.namedTeams ? t.teams.length + ' teams' : 'Teams to be announced'}</span>
         <span>Matchdays ${played}/5</span>
@@ -366,7 +420,8 @@ function renderMatchdays(container, t) {
     const wrap = el('div', 'matchday');
     wrap.appendChild(el('h3', null, `Matchday ${day}`));
     const panel = el('div', 'panel');
-    byDay[day].forEach(r => panel.appendChild(matchRow(r.teamA, r.teamB, r.stats, r.rounds)));
+    byDay[day].forEach(r => panel.appendChild(
+      matchRow(r.teamA, r.teamB, r.stats, r.rounds, r.kickoff)));
     wrap.appendChild(panel);
     container.appendChild(wrap);
   });
@@ -401,7 +456,7 @@ function wonTag(isWinner) {
   return isWinner ? '<span class="visually-hidden"> (winner)</span>' : '';
 }
 
-function matchRow(teamA, teamB, s, rounds) {
+function matchRow(teamA, teamB, s, rounds, kickoff) {
   const row = el('div', 'match-row');
   const aWin = s.decided && s.winnerSide === 'a';
   const bWin = s.decided && s.winnerSide === 'b';
@@ -410,6 +465,7 @@ function matchRow(teamA, teamB, s, rounds) {
   const mid = el('div', null,
     `<div class="score">${s.played ? s.wa : '-'}<span class="sep">:</span>${s.played ? s.wb : '-'}</div>
      ${subScoreHtml(s)}
+     ${!s.played && kickoff ? `<div class="kickoff-line">${kickoffHtml(kickoff)}</div>` : ''}
      <div class="rounds-strip">${roundsStripHtml(s, rounds)}</div>`);
   row.appendChild(mid);
   row.appendChild(el('div', 'side right',

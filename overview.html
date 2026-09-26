@@ -147,7 +147,8 @@ const pending = t.seedingSettled
 if (pending) {
   document.getElementById('next-section').style.display = '';
   const panel = el('div', 'panel');
-  panel.appendChild(matchRow(pending.teamA, pending.teamB, pending.stats, pending.rounds));
+  panel.appendChild(matchRow(pending.teamA, pending.teamB, pending.stats, pending.rounds,
+                            pending.kickoff));
   document.getElementById('next-match').appendChild(panel);
 }
 

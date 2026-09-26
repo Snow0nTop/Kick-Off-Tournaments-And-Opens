@@ -210,6 +210,9 @@ td.team, tbody th.team { font-weight: 700; text-align: left; }
 .status-pill.level { background: rgba(242,182,50,.14); color: var(--gold); }
 .status-pill.drawn { background: rgba(135,146,168,.18); color: var(--draw); }
 .status-pill.forfeit { background: rgba(255,93,108,.15); color: var(--loss); }
+/* a match not played yet shows when it will be, on the visitor's own clock */
+.kickoff-line { margin-top: .25em; font-size: .875rem; color: var(--text-dim); }
+.kickoff-gmt { color: var(--text-mute); white-space: nowrap; }
 /* points decide the table, so they are the one bold number in the row */
 td.pts, th.pts { font-weight: 800; color: var(--text); }
 

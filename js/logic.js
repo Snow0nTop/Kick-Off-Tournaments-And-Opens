@@ -246,7 +246,7 @@ function computeGroupStage(teams, groupMatches) {
         s.status = 'Forfeit';
       }
       rows.push({ matchday: dayIdx + 1, teamA, teamB, format: m.format,
-                  rounds, forfeit, stats: s });
+                  rounds, forfeit, kickoff: m.kickoff || null, stats: s });
       if (s.played > 0) {
         const da = stats[teamA], db = stats[teamB];
         da.mp++; db.mp++;
@@ -386,6 +386,10 @@ function buildTournament(raw) {
     ? (playoffs[7].stats.winnerSide === 'a' ? playoffs[7].teamA : playoffs[7].teamB)
     : null;
   const anyPlayoffPlayed = playoffs.some(p => p.stats.played > 0);
+  // the earliest scheduled kick-off, as an ISO time in UTC - the tournament's
+  // start, once the admins have put a date on at least one match
+  const firstKickoff = groupRows.map(r => r.kickoff).filter(Boolean)
+    .sort((x, y) => new Date(x) - new Date(y))[0] || null;
   // One word for where the tournament stands, shared by the hub and the pages.
   const phase = champion ? 'done'
     : !allDecided ? (anyGroupPlayed ? 'group' : 'upcoming')
@@ -393,7 +397,7 @@ function buildTournament(raw) {
     : 'playoffs';
   return { ...raw, teams, namedTeams, kind, chain: CHAINS[kind], groupRows, groupStats,
            rank, standings, allDecided, anyGroupPlayed, anyPlayoffPlayed, seedingSettled,
-           unresolvedTies, playoffs, champion, phase };
+           unresolvedTies, playoffs, champion, phase, firstKickoff };
 }
 
 // The tournament a page was asked for: ?t=<id>, falling back to the first one.
