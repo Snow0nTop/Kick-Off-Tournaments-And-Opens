@@ -60,7 +60,7 @@ function renderNav(active, t) {
 // so renaming a team in a workbook never breaks a layout - it just loses the
 // crest until someone drops in a file with the matching name.
 const LOGO_SLUGS = new Set([
-  'blizzardsfc', 'bmfc', 'califc', 'cerruanosfc', 'glassfc', 'kotao', 'sandmonkeyfc',
+  'blizzardsfc', 'bmfc', 'califc', 'cerruanosfc', 'kotao', 'sandmonkeyfc', 'wanofc',
 ]);
 
 function teamSlug(name) {
